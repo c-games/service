@@ -2,8 +2,8 @@ package msg
 
 import (
 	"encoding/json"
-	"gitlab.3ag.xyz/backend/common/fail"
-	"gitlab.3ag.xyz/backend/service"
+	"github.com/c-games/common/fail"
+	"github.com/c-games/service"
 )
 
 type totalAndData struct {

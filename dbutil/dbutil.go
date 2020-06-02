@@ -3,8 +3,8 @@ package dbutil
 import (
 	"database/sql"
 	"fmt"
-	"gitlab.3ag.xyz/backend/common/coll"
-	"gitlab.3ag.xyz/backend/common/str"
+	"github.com/c-games/common/coll"
+	"github.com/c-games/common/str"
 	"reflect"
 )
 
