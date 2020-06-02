@@ -1,0 +1,296 @@
+package service
+
+import (
+	"fmt"
+	"github.com/sirupsen/logrus"
+	"os"
+	"runtime"
+	"strings"
+	"time"
+)
+
+type Level uint32
+
+const (
+	LevelFatal = iota //exit after logging
+	LevelPanic        //throw panic after logging
+	LevelError
+	LevelWarning
+	LevelInfo
+	LevelDebug
+	LevelTrace
+	FormatterTypeText
+	FormatterTypeJSON
+)
+
+type Logger struct {
+	level         Level
+	logFileName   string
+	activeLog     bool
+	activeLogFile bool
+	fullPath      bool
+	logrus        *logrus.Logger
+	forceColor    bool //當輸出到stdout, 是否使用彩色
+	formatterType int
+}
+
+func newLogger(fileNamePrefix string, level string) (*Logger, error) {
+
+	if fileNamePrefix == "" {
+		return nil, fmt.Errorf("logger file name is empty")
+	}
+
+	l := &Logger{
+		level:         0,
+		logFileName:   fileNamePrefix,
+		activeLog:     true,
+		activeLogFile: true,
+		fullPath:      false,
+		logrus:        logrus.New(),
+	}
+	l.level = l.GetLevel(level)
+	l.SetFormatter(FormatterTypeText, true)
+	l.logrus.SetReportCaller(true)
+	return l, nil
+}
+func (l *Logger) GetLevel(level string) Level {
+	if level == "debug" {
+		return LevelDebug
+	}
+	if level == "info" {
+		return LevelInfo
+	}
+	if level == "warning" {
+		return LevelWarning
+	}
+	if level == "error" {
+		return LevelError
+	}
+	if level == "panic" {
+		return LevelPanic
+	}
+	if level == "fatal" {
+		return LevelFatal
+	}
+	if level == "trace" {
+		return LevelTrace
+	}
+	return LevelInfo
+}
+
+func (l *Logger) SetLevel(level Level) {
+	l.level = level
+}
+
+func (l *Logger) IsFullPath(fullPath bool) {
+	l.fullPath = fullPath
+}
+
+//SetLogFileName sets file name for log file.
+func (l *Logger) SetLogFileName(name string) {
+	l.logFileName = name
+
+}
+
+//Fields is a temp type for logrus.Fields
+type Fields map[string]interface{}
+
+//SetFormatter can set logger format.
+//There two formats.
+//Parameter json for json format.
+//Parameter text for text format.
+func (l *Logger) SetFormatter(formatterType int, forceColor bool) {
+	l.forceColor = forceColor
+	l.formatterType = formatterType
+
+	if formatterType == FormatterTypeText {
+		l.logrus.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp:    true,
+			ForceColors:      forceColor,
+			DisableColors:    false,
+			PadLevelText:     false,
+			CallerPrettyfier: l.returnFunctionAndFileName,
+		})
+
+	} else {
+		l.logrus.SetFormatter(&logrus.JSONFormatter{
+			PrettyPrint:      true,
+			CallerPrettyfier: l.returnFunctionAndFileName,
+		})
+	}
+}
+
+//returnFunctionAndFileName get caller function name and file name.
+func (l *Logger) returnFunctionAndFileName(f *runtime.Frame) (string, string) {
+	var oldPath string
+	if l.fullPath {
+		oldPath = ""
+	} else {
+		oldPath, _ = os.Getwd()
+	}
+	filename := strings.Replace(f.File, oldPath, "", -1)
+	fn := f.Function[strings.LastIndex(f.Function, ".")+1:]
+	return fmt.Sprintf("%s()", fn), fmt.Sprintf(" %s:%d", filename, f.Line)
+}
+
+//spaceFieldsJoin stripping all whitespace characters.
+func (l *Logger) spaceFieldsJoin(str string) string {
+	return strings.Join(strings.Fields(str), "")
+}
+
+func (l *Logger) log(targetLevel Level, entry *logrus.Entry, args ...interface{}) {
+	if targetLevel > l.level {
+		return
+	}
+
+	if targetLevel == LevelFatal {
+		entry.Fatal(args...)
+	} else if targetLevel == LevelPanic {
+		entry.Panic(args...)
+	} else if targetLevel == LevelError {
+		entry.Error(args...)
+	} else if targetLevel == LevelWarning {
+		entry.Warning(args...)
+	} else if targetLevel == LevelInfo {
+		entry.Info(args...)
+	} else if targetLevel == LevelDebug {
+		entry.Debug(args...)
+	} else {
+		entry.Trace(args...)
+	}
+}
+
+//Log logs with level and args
+func (l *Logger) Log(targetLevel Level, args ...interface{}) {
+	if targetLevel == LevelFatal {
+		l.logrus.Fatal(args...)
+	} else if targetLevel == LevelPanic {
+		l.logrus.Panic(args...)
+	} else if targetLevel == LevelError {
+		l.logrus.Error(args...)
+	} else if targetLevel == LevelWarning {
+		l.logrus.Warning(args...)
+	} else if targetLevel == LevelInfo {
+		l.logrus.Info(args...)
+	} else if targetLevel == LevelDebug {
+		l.logrus.Debug(args...)
+	} else {
+		l.logrus.Trace(args...)
+	}
+}
+
+func (l *Logger) LogFile(targetLevel Level, args ...interface{}) {
+	filePath := l.logFileName + time.Now().Format("20060102") + ".log"
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err != nil {
+		return
+	}
+
+	defer f.Close()
+
+	//關掉 color 如果是 TextFormatter
+	if l.formatterType == FormatterTypeText {
+		l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
+	}
+
+	l.logrus.SetOutput(f)
+	l.Log(targetLevel, args...)
+}
+
+func (l *Logger) WithField(level Level, key string, value interface{}, args ...interface{}) {
+
+	var entry *logrus.Entry
+	l.logrus.SetOutput(os.Stdout)
+
+	if len(l.spaceFieldsJoin(key)) > 0 {
+		entry = l.logrus.WithField(key, value)
+	} else {
+		//no WithField ,create entry
+		entry = logrus.NewEntry(l.logrus)
+	}
+	l.log(level, entry, args...)
+
+}
+
+func (l *Logger) WithFields(level Level, fields Fields, args ...interface{}) {
+	var entry *logrus.Entry
+	l.logrus.SetOutput(os.Stdout)
+
+	if len(fields) > 0 {
+
+		//local Fields to logrus.Fields
+		f := logrus.Fields{}
+		for k, v := range fields {
+			f[k] = v
+		}
+
+		entry = l.logrus.WithFields(f)
+	} else {
+		entry = logrus.NewEntry(l.logrus)
+	}
+	l.log(level, entry)
+}
+
+func (l *Logger) WithFieldFile(level Level, key string, value interface{}, args ...interface{}) error {
+
+	filePath := l.logFileName + time.Now().Format("20060102") + ".log"
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err == nil {
+		var entry *logrus.Entry
+		defer f.Close()
+
+		//關掉 color 如果是 TextFormatter
+		if l.formatterType == FormatterTypeText {
+			l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
+		}
+
+		l.logrus.SetOutput(f)
+
+		if len(l.spaceFieldsJoin(key)) > 0 {
+			entry = l.logrus.WithField(key, value)
+		} else {
+			entry = logrus.NewEntry(l.logrus)
+		}
+
+		l.log(level, entry)
+		return nil
+	}
+	return err
+}
+
+func (l *Logger) WithFieldsFile(level Level, fields Fields, args ...interface{}) error {
+	filePath := l.logFileName + time.Now().Format("20060102") + ".log"
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err == nil {
+		defer f.Close()
+
+		var entry *logrus.Entry
+
+		//輸出到檔案，關閉 force color
+		//關掉 color 如果是 TextFormatter
+		if l.formatterType == FormatterTypeText {
+			l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
+		}
+
+		l.logrus.SetOutput(f)
+
+		if len(fields) > 0 {
+
+			fd := logrus.Fields{}
+			for k, v := range fields {
+				fd[k] = v
+			}
+			entry = l.logrus.WithFields(fd)
+		} else {
+			entry = logrus.NewEntry(l.logrus)
+		}
+
+		l.log(level, entry)
+		return nil
+
+	}
+	return nil
+}
