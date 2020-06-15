@@ -227,6 +227,63 @@ func TestRedis_GetInt64(t *testing.T) {
 	}
 }
 
+func TestRedis_GetFloat64(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key          string
+		defaultValue float64
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    float64
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{},
+			args: args{
+				key:          "test",
+				defaultValue: 0,
+			},
+			want:    12345678910,
+			wantErr: false,
+		},
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	_ = client.Set("test", "12345678910", 0)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: client,
+			}
+			got, err := rds.GetFloat64(tt.args.key, tt.args.defaultValue)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.GetFloat64() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.GetFloat64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRedis_HMGet(t *testing.T) {
 
 	s, err := miniredis.Run()

@@ -88,6 +88,22 @@ func (rds *Redis) GetInt64(key string, defaultValue int64) (int64, error) {
 
 	return int64Value, nil
 }
+
+func (rds *Redis) GetFloat64(key string, defaultValue float64) (float64, error) {
+	value, err := rds.client.Get(key).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	float64Value, err := strconv.ParseFloat(value, 10)
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return float64Value, nil
+}
+
 func (rds *Redis) HMSet(key string, data map[string]interface{}) {
 	rds.client.HMSet(key, data)
 }

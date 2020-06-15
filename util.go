@@ -45,7 +45,7 @@ func SubSecond(begin, end time.Time) (int64, error) {
 }
 
 func randomSerial() int {
-	return randomInt(100000000, 999999999)
+	return randomInt(100000000000, 999999999999)
 }
 
 func randomInt(min, max int) int {

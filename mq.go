@@ -673,7 +673,7 @@ func (m *MQ) storeReceiver(key int, rcv *receiver) (ok bool) {
 	// if ok =true =load
 	// if ok =false =store
 
-	//判斷是否put成功，回傳!rok
+	//判斷是否put成功，回傳!ok
 	return !ok
 }
 func (m *MQ) rangeReceiver(f func(key, value interface{}) bool) {
