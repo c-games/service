@@ -11,6 +11,7 @@ import (
 func TestLogger(t *testing.T) {
 
 	l, _ := newLogger("log", "info")
+
 	fmt.Printf("defalut callReprter: \n")
 	l.SetFormatter(FormatterTypeText, true,true,nil)
 
@@ -19,10 +20,17 @@ func TestLogger(t *testing.T) {
 
 	fmt.Printf("custom callReprter: \n")
 
-	l.SetFormatter(FormatterTypeJSON, true,true, l.CallerParser(l.ReturnCaller()))
+	//方法一，設定成formatter
+	//但行數會錯，除非每次都設定
+	l.SetFormatter(FormatterTypeText, true,true, l.CallerParser(l.ReturnCaller()))
 	l.WithField(LevelInfo, "json", "1", "a", "b")
 	_ = l.WithFieldFile(LevelInfo, "json", 1, "a", "b")
 	_ = l.WithFieldsFile(LevelInfo, Fields{"1": 1, "2": 3}, "a", "b")
+
+	//方法二，關閉reportCaller, 自己呼叫放到field
+	fmt.Printf("caller formatted: \n")
+	l.SetFormatter(FormatterTypeText, true,false, nil)
+	l.WithField(LevelInfo, "caller", l.ReturnCallerFormatted(), "a", "b")
 }
 
 func TestLogger_fromService(t *testing.T){

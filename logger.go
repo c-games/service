@@ -108,21 +108,22 @@ func (l *Logger) SetFormatter(formatterType int, forceColor bool, reportCaller b
 
 	if formatterType == FormatterTypeText {
 		l.logrus.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp: true,
-			ForceColors:   forceColor,
-			DisableColors: false,
-			PadLevelText:  false,
+			FullTimestamp:    true,
+			ForceColors:      forceColor,
+			DisableColors:    false,
+			PadLevelText:     false,
 			CallerPrettyfier: callerReporter,
 		})
 	} else {
 		l.logrus.SetFormatter(&logrus.JSONFormatter{
-			PrettyPrint: true,
+			PrettyPrint:      true,
 			CallerPrettyfier: callerReporter,
 		})
 	}
 }
+
 //CallerParser parse func name,file name, line and return func for formatter callerPrettyfier
-func (l*Logger)CallerParser(funcName,fileName string, line int) func(*runtime.Frame) (string, string) {
+func (l *Logger) CallerParser(funcName, fileName string, line int) func(*runtime.Frame) (string, string) {
 
 	return func(f *runtime.Frame) (string, string) {
 		return funcName, fmt.Sprintf(" %s:%d", fileName, line)
@@ -157,6 +158,36 @@ func (l *Logger) ReturnCaller() (funcName string, fileName string, line int) {
 	filename := strings.Replace(f.File, oldPath, "", -1)
 	fn := f.Function[strings.LastIndex(f.Function, ".")+1:]
 	return fn, filename, f.Line
+}
+
+func (l *Logger) ReturnCallerFormatted() string {
+
+	pc := make([]uintptr, 5)
+	n := runtime.Callers(2, pc)
+	if n == 0 {
+		// No pcs available. Stop now.
+		// This can happen if the first argument to runtime.Callers is large.
+		return ""
+	}
+
+	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
+	frames := runtime.CallersFrames(pc)
+
+	var oldPath string
+	if l.fullPath {
+		oldPath = ""
+	} else {
+		oldPath, _ = os.Getwd()
+	}
+
+	f, _ := frames.Next()
+
+	oldPath, _ = os.Getwd()
+
+	filename := strings.Replace(f.File, oldPath, "", -1)
+	fn := f.Function[strings.LastIndex(f.Function, ".")+1:]
+
+	return fmt.Sprintf("%s %s:%d", fn, filename, f.Line)
 }
 
 //spaceFieldsJoin stripping all whitespace characters.
