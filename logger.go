@@ -143,19 +143,13 @@ func (l *Logger) ReturnCaller() (funcName string, fileName string, line int) {
 
 	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
 	frames := runtime.CallersFrames(pc)
-
-	var oldPath string
-	if l.fullPath {
-		oldPath = ""
-	} else {
-		oldPath, _ = os.Getwd()
-	}
-
 	f, _ := frames.Next()
 
-	oldPath, _ = os.Getwd()
+	filename := f.File
+	if !l.fullPath {
+		filename = f.File[strings.LastIndex(f.File, "/")+1:]
+	}
 
-	filename := strings.Replace(f.File, oldPath, "", -1)
 	fn := f.Function[strings.LastIndex(f.Function, ".")+1:]
 	return fn, filename, f.Line
 }
@@ -173,18 +167,13 @@ func (l *Logger) ReturnCallerFormatted() string {
 	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
 	frames := runtime.CallersFrames(pc)
 
-	var oldPath string
-	if l.fullPath {
-		oldPath = ""
-	} else {
-		oldPath, _ = os.Getwd()
-	}
-
 	f, _ := frames.Next()
 
-	oldPath, _ = os.Getwd()
+	filename := f.File
+	if !l.fullPath {
+		filename = f.File[strings.LastIndex(f.File, "/")+1:]
+	}
 
-	filename := strings.Replace(f.File, oldPath, "", -1)
 	fn := f.Function[strings.LastIndex(f.Function, ".")+1:]
 
 	return fmt.Sprintf("%s %s:%d", fn, filename, f.Line)
@@ -241,6 +230,7 @@ func (l *Logger) LogFile(targetLevel Level, args ...interface{}) {
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
 	if err != nil {
+		fmt.Printf("LogFile %s", err.Error())
 		return
 	}
 
@@ -293,61 +283,64 @@ func (l *Logger) WithFieldFile(level Level, key string, value interface{}, args 
 
 	filePath := l.logFileName + time.Now().Format("20060102") + ".log"
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-
-	if err == nil {
-		var entry *logrus.Entry
-		defer f.Close()
-
-		//關掉 color 如果是 TextFormatter
-		if l.formatterType == FormatterTypeText {
-			l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
-		}
-
-		l.logrus.SetOutput(f)
-
-		if len(l.spaceFieldsJoin(key)) > 0 {
-			entry = l.logrus.WithField(key, value)
-		} else {
-			entry = logrus.NewEntry(l.logrus)
-		}
-
-		l.log(level, entry, args...)
-		return nil
+	if err != nil {
+		fmt.Printf("WithFieldFile %s", err.Error())
+		return err
 	}
-	return err
+
+	defer f.Close()
+
+	var entry *logrus.Entry
+	//關掉 color 如果是 TextFormatter
+	if l.formatterType == FormatterTypeText {
+		l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
+	}
+
+	l.logrus.SetOutput(f)
+
+	if len(l.spaceFieldsJoin(key)) > 0 {
+		entry = l.logrus.WithField(key, value)
+	} else {
+		entry = logrus.NewEntry(l.logrus)
+	}
+
+	l.log(level, entry, args...)
+	return nil
 }
 
 func (l *Logger) WithFieldsFile(level Level, fields Fields, args ...interface{}) error {
 	filePath := l.logFileName + time.Now().Format("20060102") + ".log"
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
-	if err == nil {
-		defer f.Close()
-
-		var entry *logrus.Entry
-
-		//輸出到檔案，關閉 force color
-		//關掉 color 如果是 TextFormatter
-		if l.formatterType == FormatterTypeText {
-			l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
-		}
-
-		l.logrus.SetOutput(f)
-
-		if len(fields) > 0 {
-
-			fd := logrus.Fields{}
-			for k, v := range fields {
-				fd[k] = v
-			}
-			entry = l.logrus.WithFields(fd)
-		} else {
-			entry = logrus.NewEntry(l.logrus)
-		}
-
-		l.log(level, entry, args...)
-		return nil
-
+	if err != nil {
+		fmt.Printf("WithFieldsFile %s", err.Error())
+		return err
 	}
+
+	defer f.Close()
+
+	var entry *logrus.Entry
+
+	//輸出到檔案，關閉 force color
+	//關掉 color 如果是 TextFormatter
+	if l.formatterType == FormatterTypeText {
+		l.logrus.Formatter.(*logrus.TextFormatter).DisableColors = true
+	}
+
+	l.logrus.SetOutput(f)
+
+	if len(fields) > 0 {
+
+		fd := logrus.Fields{}
+		for k, v := range fields {
+			fd[k] = v
+		}
+		entry = l.logrus.WithFields(fd)
+	} else {
+		entry = logrus.NewEntry(l.logrus)
+	}
+
+	l.log(level, entry, args...)
 	return nil
+
 }
