@@ -13,7 +13,7 @@ func TestService(t *testing.T) {
 	for !strings.HasSuffix(wd, "service") {
 		wd = filepath.Dir(wd)
 	}
-	t.Logf("wd = %s", wd)
+	//t.Logf("wd = %s", wd)
 
 	app, err := NewService(wd + "/serviceConfig.json")
 	if err != nil {

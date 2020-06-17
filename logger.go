@@ -49,8 +49,8 @@ func newLogger(fileNamePrefix string, level string) (*Logger, error) {
 		logrus:        logrus.New(),
 	}
 	l.level = l.GetLevel(level)
-	l.SetFormatter(FormatterTypeText, true)
-	l.logrus.SetReportCaller(true)
+	l.SetFormatter(FormatterTypeText, true, false, nil)
+	l.logrus.SetReportCaller(false) //logrus內部的列印呼叫的func和檔案、行數，沒用
 	return l, nil
 }
 func (l *Logger) GetLevel(level string) Level {
@@ -96,41 +96,67 @@ func (l *Logger) SetLogFileName(name string) {
 type Fields map[string]interface{}
 
 //SetFormatter can set logger format.
-//There two formats.
+//reportCaller
+//callerReporter
+//if callerReporter is nil and reportCaller is true, will using default call reporter
 //Parameter json for json format.
 //Parameter text for text format.
-func (l *Logger) SetFormatter(formatterType int, forceColor bool) {
+func (l *Logger) SetFormatter(formatterType int, forceColor bool, reportCaller bool, callerReporter func(f *runtime.Frame) (string, string)) {
 	l.forceColor = forceColor
 	l.formatterType = formatterType
+	l.logrus.SetReportCaller(reportCaller)
 
 	if formatterType == FormatterTypeText {
 		l.logrus.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp:    true,
-			ForceColors:      forceColor,
-			DisableColors:    false,
-			PadLevelText:     false,
-			CallerPrettyfier: l.returnFunctionAndFileName,
+			FullTimestamp: true,
+			ForceColors:   forceColor,
+			DisableColors: false,
+			PadLevelText:  false,
+			CallerPrettyfier: callerReporter,
 		})
-
 	} else {
 		l.logrus.SetFormatter(&logrus.JSONFormatter{
-			PrettyPrint:      true,
-			CallerPrettyfier: l.returnFunctionAndFileName,
+			PrettyPrint: true,
+			CallerPrettyfier: callerReporter,
 		})
 	}
 }
+//CallerParser parse func name,file name, line and return func for formatter callerPrettyfier
+func (l*Logger)CallerParser(funcName,fileName string, line int) func(*runtime.Frame) (string, string) {
 
-//returnFunctionAndFileName get caller function name and file name.
-func (l *Logger) returnFunctionAndFileName(f *runtime.Frame) (string, string) {
+	return func(f *runtime.Frame) (string, string) {
+		return funcName, fmt.Sprintf(" %s:%d", fileName, line)
+	}
+}
+
+//ReturnCaller return caller name,file name line
+func (l *Logger) ReturnCaller() (funcName string, fileName string, line int) {
+
+	pc := make([]uintptr, 5)
+	n := runtime.Callers(2, pc)
+	if n == 0 {
+		// No pcs available. Stop now.
+		// This can happen if the first argument to runtime.Callers is large.
+		return "", "", 0
+	}
+
+	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
+	frames := runtime.CallersFrames(pc)
+
 	var oldPath string
 	if l.fullPath {
 		oldPath = ""
 	} else {
 		oldPath, _ = os.Getwd()
 	}
+
+	f, _ := frames.Next()
+
+	oldPath, _ = os.Getwd()
+
 	filename := strings.Replace(f.File, oldPath, "", -1)
 	fn := f.Function[strings.LastIndex(f.Function, ".")+1:]
-	return fmt.Sprintf("%s()", fn), fmt.Sprintf(" %s:%d", filename, f.Line)
+	return fn, filename, f.Line
 }
 
 //spaceFieldsJoin stripping all whitespace characters.
@@ -229,7 +255,7 @@ func (l *Logger) WithFields(level Level, fields Fields, args ...interface{}) {
 	} else {
 		entry = logrus.NewEntry(l.logrus)
 	}
-	l.log(level, entry)
+	l.log(level, entry, args...)
 }
 
 func (l *Logger) WithFieldFile(level Level, key string, value interface{}, args ...interface{}) error {
@@ -254,7 +280,7 @@ func (l *Logger) WithFieldFile(level Level, key string, value interface{}, args 
 			entry = logrus.NewEntry(l.logrus)
 		}
 
-		l.log(level, entry)
+		l.log(level, entry, args...)
 		return nil
 	}
 	return err
@@ -288,7 +314,7 @@ func (l *Logger) WithFieldsFile(level Level, fields Fields, args ...interface{})
 			entry = logrus.NewEntry(l.logrus)
 		}
 
-		l.log(level, entry)
+		l.log(level, entry, args...)
 		return nil
 
 	}
