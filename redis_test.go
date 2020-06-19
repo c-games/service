@@ -1,11 +1,12 @@
 package service
 
 import (
-	"github.com/alicebob/miniredis/v2"
-	"github.com/go-redis/redis"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/go-redis/redis"
 )
 
 func TestRedis_Set(t *testing.T) {
@@ -389,7 +390,7 @@ func TestRedis_HMGetByFields(t *testing.T) {
 	}{
 		{
 			"0",
-			args{key: key,},
+			args{key: key},
 			data,
 			false,
 		},
@@ -454,4 +455,185 @@ func TestRedis_Expire(t *testing.T) {
 
 	k, err := rds.client.Get(key).Result()
 	t.Logf("key %s", k)
+}
+
+func TestRedis_Expire2(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key    string
+		expire time.Duration
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name:   "key exist",
+			fields: fields{},
+			args: args{
+				key:    "key1",
+				expire: time.Duration((time.Second * 10)),
+			},
+			want: true,
+		},
+		{
+			name:   "key doesn't exist",
+			fields: fields{},
+			args: args{
+				key:    "key2",
+				expire: time.Duration((time.Second * 10)),
+			},
+			want: false,
+		},
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	_ = client.Set("key1", "123", 0)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: client,
+			}
+			if got := rds.Expire(tt.args.key, tt.args.expire); got != tt.want {
+				t.Errorf("Redis.Expire2() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_Exist(t *testing.T) {
+	const Exists int64 = 1
+	const DoesNotExists int64 = 0
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   int64
+	}{
+		{
+			name:   "key exist",
+			fields: fields{},
+			args: args{
+				key: "key1",
+			},
+			want: Exists,
+		},
+		{
+			name:   "key doesn't exist",
+			fields: fields{},
+			args: args{
+				key: "key1",
+			},
+			want: DoesNotExists,
+		},
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	_ = client.Set("key2", "123", 0)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: client,
+			}
+			if got := rds.Exist(tt.args.key); got != tt.want {
+				t.Errorf("Redis.Exist() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_Delete(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key []string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name:   "delete 1 key",
+			fields: fields{},
+			args: args{
+				key: []string{"key1"},
+			},
+			want: 1,
+			wantErr: false,
+		},
+		{
+			name:   "delete many keys",
+			fields: fields{},
+			args: args{
+				key: []string{"key2", "key3"},
+			},
+			want: 2,
+			wantErr: false,
+		},
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	_ = client.Set("key1", "123", 0)
+	_ = client.Set("key2", "123", 0)
+	_ = client.Set("key3", "123", 0)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: client,
+			}
+			got, err := rds.Delete(tt.args.key...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.Delete() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.Delete() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

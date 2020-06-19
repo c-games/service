@@ -137,6 +137,28 @@ func (rds *Redis) HMGetByFields(key string, fields ...string) (map[string]interf
 	}
 }
 
+func (rds *Redis) Exist (key string) int64 {
+	result, _ := rds.client.Exists(key).Result()
+
+	return result
+}
+
+func (rds *Redis) Expire (key string, expire time.Duration) bool {
+	result, _ := rds.client.Expire(key, expire).Result()
+
+	return result
+}
+
+func (rds *Redis) Delete (key ...string) (int64, error) {
+	numberOfKeyRemove, err := rds.client.Del(key...).Result()
+
+	if err != nil {
+		return 0, err
+	}
+
+	return numberOfKeyRemove, nil
+}
+
 func (rds *Redis) GetClient() *redis.Client {
 	return rds.client
 }
