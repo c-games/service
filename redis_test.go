@@ -549,7 +549,7 @@ func TestRedis_Exist(t *testing.T) {
 			name:   "key doesn't exist",
 			fields: fields{},
 			args: args{
-				key: "key1",
+				key: "key2",
 			},
 			want: DoesNotExists,
 		},
@@ -559,7 +559,7 @@ func TestRedis_Exist(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("key2", "123", 0)
+	_ = client.Set("key1", "123", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
