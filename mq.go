@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"log"
+	"os"
 	"sync"
 	"time"
 )
@@ -59,7 +60,7 @@ type CGMessage struct {
 
 //CGResMessage is struct for consume response message
 type CGResMessage struct {
-	Serial       int             `json:"serial"`
+	Serial       int64           `json:"serial"`
 	Command      string          `json:"command"`
 	ErrorMessage string          `json:"error_message"`
 	ErrorCode    int             `json:"error_code"`
@@ -72,13 +73,12 @@ type CGResMessage struct {
 //mq紀錄誰送的sn
 type PublishParam struct {
 	QueueName      string
-	Serial         int
 	PublishingBody []byte
 	ReceiveChan    chan []byte
 }
 
 type receiver struct {
-	Serial      int
+	Serial      int64
 	ReceiveChan chan []byte
 	beginTime   time.Time
 }
@@ -486,6 +486,10 @@ func (m *MQ) Publish(queueName string, body []byte) error {
 //紀錄publish者的 chan
 //處理timeout
 //處理收到後傳給chan
+
+var sequence uint8 = 0
+var pid int = os.Getpid()
+
 func (m *MQ) PublishProcedure(param *PublishParam) (retErr error) {
 
 	//chann:=m.channel
@@ -514,9 +518,14 @@ func (m *MQ) PublishProcedure(param *PublishParam) (retErr error) {
 		return
 	}
 
+	timestamp := time.Now().UnixNano()
+	serial := timestamp | int64(pid)<<22
+	serial |= int64(sequence)
+	sequence += 1
+
 	if cm.WaitResponse {
-		if ok := m.storeReceiver(param.Serial, &receiver{param.Serial, param.ReceiveChan, GetNowWithDefaultLocation()}); !ok {
-			errMsg := fmt.Sprintf("MQ PublishProcedure() putReceiveChan close error serial already used %d queue %s", param.Serial, param.QueueName)
+		if ok := m.storeReceiver(serial, &receiver{serial, param.ReceiveChan, GetNowWithDefaultLocation()}); !ok {
+			errMsg := fmt.Sprintf("MQ PublishProcedure() putReceiveChan close error serial already used %d queue %s", serial, param.QueueName)
 			m.logger.LogFile(LevelError, errMsg)
 			return fmt.Errorf(errMsg)
 		}
@@ -628,7 +637,7 @@ func (m *MQ) consumeResponseMessage() {
 	}
 }
 
-func (m *MQ) getTimeoutCGResMessage(sn int) []byte {
+func (m *MQ) getTimeoutCGResMessage(sn int64) []byte {
 	//CGResMessage is struct for consume response message
 	c := &CGResMessage{
 		sn,
@@ -646,7 +655,7 @@ func (m *MQ) getTimeoutCGResMessage(sn int) []byte {
 //receivers is a sync.Map used to store receiver's chan with serial as key.
 //loadReceiver gets receiver's chan and delete it from map
 //如果已經被取走，有可能取不到
-func (m *MQ) loadReceiver(sn int) *receiver {
+func (m *MQ) loadReceiver(sn int64) *receiver {
 
 	v, ok := m.receivers.Load(sn)
 	if ok {
@@ -658,12 +667,12 @@ func (m *MQ) loadReceiver(sn int) *receiver {
 	}
 	return nil
 }
-func (m *MQ) deleteReceiver(sn int) {
+func (m *MQ) deleteReceiver(sn int64) {
 	m.receivers.Delete(sn)
 }
 
 //func (m *MQ) storeReceiver(param *PublishParam) {
-func (m *MQ) storeReceiver(key int, rcv *receiver) (ok bool) {
+func (m *MQ) storeReceiver(key int64, rcv *receiver) (ok bool) {
 
 	//loadOrStore
 	//如果有就回傳value，且回傳true
