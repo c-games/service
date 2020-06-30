@@ -11,14 +11,14 @@ import (
 
 //Lottery is lottery server framework.
 type Service struct {
-	configure *Configure
-	mysql     *MySQL
-	logger    *Logger
-	mq        *MQ
-	http      *HTTPServer
-	redis     *Redis
-	idGenerator *idGenerator
-	done      chan int
+	configure    *Configure
+	mysql        *MySQL
+	logger       *Logger
+	mq           *MQ
+	http         *HTTPServer
+	redis        *Redis
+	idGenerators map[int64]*idGenerator
+	done         chan int
 }
 
 //NewService returns a app structure with config file path passed in.
@@ -82,12 +82,13 @@ func (s *Service) Hold() {
 }
 func (s *Service) enable() error {
 
-	idGen,err:=newIDGenerator(0)
-	if err!=nil{
+	idGen, err := newIDGenerator(0)
+	if err != nil {
 		return fmt.Errorf("idGenerator error %s", err.Error())
 	}
 
-	s.idGenerator=idGen
+	s.idGenerators = make(map[int64]*idGenerator)
+	s.idGenerators[0] = idGen
 
 	//if mySQL enable
 	if s.configure.Mysql.Enable {
@@ -262,4 +263,25 @@ func (s *Service) GetRedis() (*Redis, error) {
 		return s.redis, nil
 	}
 	return nil, errors.New("redis is not enabled")
+}
+
+func (s *Service) GetIDGenerator(nodeNum int64) (*idGenerator, error) {
+	if nodeNum < 0 || nodeNum > 1023 {
+		return nil, fmt.Errorf("nodeNum out of range want 0-1023 got %d", nodeNum)
+	}
+
+	if v, ok := s.idGenerators[nodeNum]; ok {
+		return v, nil
+	}
+	//create gen
+	g, err := newIDGenerator(nodeNum)
+
+	if err != nil {
+		return nil, fmt.Errorf("get idGenerator error nodeNum %d", nodeNum)
+	}
+
+	s.idGenerators[nodeNum] = g
+
+	return s.idGenerators[nodeNum], nil
+
 }
