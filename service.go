@@ -17,6 +17,7 @@ type Service struct {
 	mq        *MQ
 	http      *HTTPServer
 	redis     *Redis
+	idGenerator *idGenerator
 	done      chan int
 }
 
@@ -80,6 +81,13 @@ func (s *Service) Hold() {
 	}
 }
 func (s *Service) enable() error {
+
+	idGen,err:=newIDGenerator(0)
+	if err!=nil{
+		return fmt.Errorf("idGenerator error %s", err.Error())
+	}
+
+	s.idGenerator=idGen
 
 	//if mySQL enable
 	if s.configure.Mysql.Enable {

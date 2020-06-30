@@ -64,7 +64,6 @@ func testPublishQueryUserLimit(app *Service, testChan chan []byte) error {
 	body, _ := getCGMessage(sn, "query_user_limit", "cruise-test", bd, true)
 	pp := &PublishParam{
 		"cg-user",
-		sn,
 		body,
 		testChan,
 	}
@@ -91,7 +90,6 @@ func testPublishProcdureWalletQuery(app *Service, testChan chan []byte) error {
 	body, _ := getCGMessage(sn, "query", "cruise-test", bd, true)
 	pp := &PublishParam{
 		"cg-wallet",
-		sn,
 		body,
 		testChan,
 	}
