@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	goMysql "github.com/go-sql-driver/mysql"
 	"github.com/c-games/common/coll"
 	"github.com/c-games/common/fail"
 	strutil "github.com/c-games/common/str"
+	goMysql "github.com/go-sql-driver/mysql"
 	"reflect"
 	"strings"
 	"time"
@@ -159,8 +159,17 @@ func getMySQLConfig(dbConfig *mysqlParameter) (*goMysql.Config, error) {
 
 //Close close sql db connection.
 func (ms *MySQL) Close() {
-	ms.mainDB.Close()
-	ms.readDB.Close()
+	if ms.mainDB != nil {
+		ms.mainDB.Close()
+	}
+	if ms.readDB != nil {
+		ms.readDB.Close()
+	}
+}
+
+//SetMainDB for sql mock test
+func (ms *MySQL)SetMainDB(db *sql.DB){
+	ms.mainDB=db
 }
 
 //SelectTableNames returns all table name of target db.
