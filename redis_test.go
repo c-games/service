@@ -293,7 +293,7 @@ func TestRedis_HMGet(t *testing.T) {
 	}
 	defer s.Close()
 
-	param := &redisParameter{
+	param := &RedisParameter{
 		Network:      "tcp",
 		Address:      s.Addr(),
 		Password:     "",
@@ -303,7 +303,7 @@ func TestRedis_HMGet(t *testing.T) {
 		WriteTimeout: time.Duration(time.Second * 5),
 		PoolSize:     10,
 	}
-	rds, _ := newRedis(param)
+	rds, _ := NewRedis(param)
 
 	key := "key"
 	data := map[string]interface{}{
@@ -359,7 +359,7 @@ func TestRedis_HMGetByFields(t *testing.T) {
 	}
 	defer s.Close()
 
-	param := &redisParameter{
+	param := &RedisParameter{
 		Network:      "tcp",
 		Address:      s.Addr(),
 		Password:     "",
@@ -369,7 +369,7 @@ func TestRedis_HMGetByFields(t *testing.T) {
 		WriteTimeout: time.Duration(time.Second * 5),
 		PoolSize:     10,
 	}
-	rds, _ := newRedis(param)
+	rds, _ := NewRedis(param)
 
 	key := "key"
 	data := map[string]interface{}{

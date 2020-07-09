@@ -21,13 +21,13 @@ type sqlQueryExec_retArrInterface func(rows *sql.Rows) ([]interface{}, error)
 type MySQL struct {
 	mainDB             *sql.DB
 	readDB             *sql.DB
-	mainDBConfig       *mysqlParameter
-	readDBConfig       *mysqlParameter
+	mainDBConfig       *MysqlParameter
+	readDBConfig       *MysqlParameter
 	readWriteSplitting bool
 }
 
 //請看 mysql mysqlParameter
-type mysqlParameter struct {
+type MysqlParameter struct {
 	DriverName   string
 	User         string        // Username
 	Password     string        // Password (requires User)
@@ -61,7 +61,7 @@ type DBStats struct {
 //readTimeout I/O read timeout 30s, 0.5m, 1m30s
 //writeTimeout I/O write timeout
 //timeout timeout for establishing connections
-func newMySQL(mainDBConfig *mysqlParameter, readWriteSplitting bool, readOnlyDBConfig *mysqlParameter) (*MySQL, error) {
+func NewMySQL(mainDBConfig *MysqlParameter, readWriteSplitting bool, readOnlyDBConfig *MysqlParameter) (*MySQL, error) {
 
 	mainConf, err := getMySQLConfig(mainDBConfig)
 	if err != nil {
@@ -111,7 +111,7 @@ func newMySQL(mainDBConfig *mysqlParameter, readWriteSplitting bool, readOnlyDBC
 	}, nil
 }
 
-func getMySQLConfig(dbConfig *mysqlParameter) (*goMysql.Config, error) {
+func getMySQLConfig(dbConfig *MysqlParameter) (*goMysql.Config, error) {
 
 	if len(dbConfig.User) < 1 {
 		return nil, fmt.Errorf("mysqlParameter length of %s =%d", "user", len(dbConfig.User))

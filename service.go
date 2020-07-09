@@ -141,7 +141,7 @@ func (s *Service) enableMySQL() (*MySQL, error) {
 	rm, _ := time.ParseDuration(mainDBConf.ReadTimeout)
 	wm, _ := time.ParseDuration(mainDBConf.WriteTimeout)
 
-	mainDBParam := &mysqlParameter{
+	mainDBParam := &MysqlParameter{
 		DriverName:   mainDBConf.DriverName,
 		User:         mainDBConf.User,
 		Password:     mainDBConf.Password,
@@ -154,7 +154,7 @@ func (s *Service) enableMySQL() (*MySQL, error) {
 		ParseTime:    mainDBConf.ParseTime,
 	}
 
-	var readOnlyDBParam *mysqlParameter
+	var readOnlyDBParam *MysqlParameter
 
 	//有讀寫分離
 	if s.configure.Mysql.ReadWriteSplitting {
@@ -163,7 +163,7 @@ func (s *Service) enableMySQL() (*MySQL, error) {
 		rm, _ := time.ParseDuration(wDBConf.ReadTimeout)
 		wm, _ := time.ParseDuration(wDBConf.WriteTimeout)
 
-		readOnlyDBParam = &mysqlParameter{
+		readOnlyDBParam = &MysqlParameter{
 			DriverName:   mainDBConf.DriverName,
 			User:         mainDBConf.User,
 			Password:     mainDBConf.Password,
@@ -177,7 +177,7 @@ func (s *Service) enableMySQL() (*MySQL, error) {
 		}
 	}
 
-	return newMySQL(mainDBParam, s.configure.Mysql.ReadWriteSplitting, readOnlyDBParam)
+	return NewMySQL(mainDBParam, s.configure.Mysql.ReadWriteSplitting, readOnlyDBParam)
 }
 func (s *Service) enableMQ() (*MQ, error) {
 	if s.configure.MQ == nil {
@@ -215,7 +215,7 @@ func (s *Service) enableRedis() (*Redis, error) {
 	}
 	conf := s.configure.Redis
 
-	params := &redisParameter{
+	params := &RedisParameter{
 		Network:      conf.Network,
 		Address:      conf.Address,
 		Password:     conf.Password,
@@ -226,7 +226,7 @@ func (s *Service) enableRedis() (*Redis, error) {
 		PoolSize:     conf.PoolSize,
 	}
 
-	return newRedis(params)
+	return NewRedis(params)
 }
 
 func (s *Service) GetConfigure() (*Configure, error) {

@@ -9,7 +9,7 @@ import (
 type Redis struct {
 	client *redis.Client
 }
-type redisParameter struct {
+type RedisParameter struct {
 	Network      string
 	Address      string
 	Password     string
@@ -20,7 +20,7 @@ type redisParameter struct {
 	PoolSize     int
 }
 
-func newRedis(param *redisParameter) (*Redis, error) {
+func NewRedis(param *RedisParameter) (*Redis, error) {
 
 	client := redis.NewClient(&redis.Options{
 		Network:      param.Network,
