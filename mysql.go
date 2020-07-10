@@ -416,6 +416,10 @@ func (ms *MySQL) SQLDelete(query string, args ...interface{}) (sql.Result, error
 	return ms.mainDB.Exec(query, args...)
 }
 
+func (ms *MySQL) SQLExec(query string, args ...interface{}) (sql.Result, error) {
+	return ms.mainDB.Exec(query, args...)
+}
+
 type ITable struct {
 }
 

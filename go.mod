@@ -13,6 +13,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pkg/errors v0.8.0
+	github.com/proullon/ramsql v0.0.0-20181213202341-817cee58a244
 	github.com/sirupsen/logrus v1.5.0
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
