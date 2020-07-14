@@ -480,6 +480,15 @@ func (ctx *DbContext) Select(s []string) *QueryContext {
 	panic("db table definition need a *service.ITable")
 }
 
+func (ctx *DbContext) SelectWithSpecificTableName(s []string, tblName string) *QueryContext {
+
+	return &QueryContext{
+		ctx:       ctx,
+		tableName: tblName,
+		selects:   s,
+	}
+}
+
 func (ctx *QueryContext) Join(targetTable, targetColumn, foreignColumn string) *QueryContext {
 	panic("implement me")
 	return ctx
