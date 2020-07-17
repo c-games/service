@@ -51,7 +51,7 @@ type QueueDefinition struct {
 
 //CGMessage is structure for consume command message
 type CGMessage struct {
-	Serial        int             `json:"serial"`
+	Serial        int64             `json:"serial"`
 	ResponseQueue string          `json:"response_queue"`
 	Command       string          `json:"command"`
 	Data          json.RawMessage `json:"data"`
