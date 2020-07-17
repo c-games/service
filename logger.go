@@ -2,11 +2,14 @@ package service
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"runtime"
 	"strings"
 	"time"
+
+	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
+	gas "github.com/firstrow/goautosocket"
+	"github.com/sirupsen/logrus"
 )
 
 type Level uint32
@@ -34,7 +37,7 @@ type Logger struct {
 	formatterType int
 }
 
-func newLogger(fileNamePrefix string, level string) (*Logger, error) {
+func newLogger(fileNamePrefix, level, address string) (*Logger, error) {
 
 	if fileNamePrefix == "" {
 		return nil, fmt.Errorf("logger file name is empty")
@@ -51,8 +54,17 @@ func newLogger(fileNamePrefix string, level string) (*Logger, error) {
 	l.level = l.GetLevel(level)
 	l.SetFormatter(FormatterTypeText, true, false, nil)
 	l.logrus.SetReportCaller(false) //logrus內部的列印呼叫的func和檔案、行數，沒用
+
+	conn, err := gas.Dial("tcp", address)
+	if err != nil {
+		l.logrus.Error("newLogger failed at gas.Dail", err)
+	}
+
+	l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{})))
+
 	return l, nil
 }
+
 func (l *Logger) GetLevel(level string) Level {
 	if level == "debug" {
 		return LevelDebug

@@ -4,7 +4,8 @@
     "Enable": true,
     "FullPath": false,
     "FileName": "lottery",
-    "Level": "info"
+    "Level": "info",
+	"Address": "localhost:5000"
   },
   "Mysql": {
     "Enable": true,
