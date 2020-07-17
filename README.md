@@ -1,8 +1,8 @@
 # Service
 Service is basic service package used to build your own service.
-
+- - -
 ### Services List
-* Logger go built-in log
+* Logger logrus, ELK
 * HTTP go built-in http using [gorilla mux](https://github.com/gorilla/mux)
 * MQ  [RabbitMQ](https://www.rabbitmq.com/) 
 * MySQL [go-mysql](https://github.com/go-sql-driver/mysql)
@@ -126,6 +126,17 @@ Service is basic service package used to build your own service.
             "float": 123123.45,
             "arr": [1, 2, 3, 4, 5],
             "map": {"test": "1787"}
+      },
+      "Websocket": {
+          "Enable": true,
+          "Address": "",
+          "Port": "9000",
+          "ConnPoolSize": 10000,
+          "ChanPoolSize": 1000,
+          "AcceptTimeout": "3s",
+          "AliveTimeout": "3s",
+          "ReadBufferSize": 10240,
+          "WriteBufferSize": 10240
       }
 }
 ```
@@ -177,3 +188,60 @@ abc123123
 123123.45
 [1 2 3 4 5]
 ```
+
+### Using ELK log system (Elasticsearch、Logstash、Kibana)
+- - -
+#### 1. Before handle request
+    logger, err := svc.GetLogger()
+    if err != nil {
+        ...
+    }
+    
+    // Record service-wide information
+    logger.WithFields(logrus.Fields{
+        "service": "api-server",
+        "host": "...",
+        "port": "...",     
+    })
+#### 2. Declare a log entry in the beginning of a http request handler function.
+    func (h *handler) handleFunc() {
+        // Do not use logger directly in http requests
+        entry := logrus.NewEntry(h.logger)
+        ...
+    }
+#### 3. Passing entry into functions whenever logging is needed.
+        ...
+        doSomethingNeedLog(entry, anotherParameters...)      
+        ...
+    
+#### 4. Using WithField() and WithFields() to record common informations within a request.
+    func doSomethingNeedLog(entry, param1, param2, ...) {
+        // Record common informations
+        entry.WithFields(logrus.Fields{
+            "key1": param1,
+            "key2": param2,
+        })
+        
+        // Record common information
+        info := getSomeInfomation()
+        entry.WithField("info": info)
+#### 5. Fire logs with Info(), Warn(), Error()
+        if err := doSomethingMayError(); err != nil {
+            entry.WithField("err", err).Error("doSomethingNeedLog failed at doSomthingMayError")
+            return
+        }
+    }
+### Recommended log keys
+1. service
+2. address
+3. host
+4. port
+5. ip
+6. func
+7. agentID
+8. userID
+9. command
+10. path
+11. method
+12. error
+### Find logs in Kibana
