@@ -3,8 +3,9 @@ package service
 import (
 	"errors"
 	"math/rand"
-	"strings"
 	"time"
+	"github.com/satori/go.uuid"
+	"strings"
 )
 
 const (
@@ -55,4 +56,24 @@ func randomInt(min, max int) int {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	return min + rand.Intn(max-min+1)
+}
+
+// GenerateAES256RandomBites returns securely generated random bytes.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func generateAES256RandomBytes() ([]byte, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func uuidGetV4() (string, error) {
+
+	u := uuid.NewV4()
+	return u.String(), nil
 }

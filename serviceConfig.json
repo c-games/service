@@ -105,5 +105,16 @@
     "PoolSize": 10
   },
   "Others": {
+  },
+  "Websocket": {
+    "Enable": true,
+    "Address": "",
+    "Port": "9000",
+    "ConnPoolSize": 10000,
+    "ChanPoolSize": 1000,
+    "AcceptTimeout": "3s",
+    "AliveTimeout": "3s",
+    "ReadBufferSize": 10240,
+    "WriteBufferSize": 10240
   }
 }
