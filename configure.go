@@ -31,6 +31,7 @@ type loggerConfig struct {
 	FullPath bool // true=log with full path, false= log with short path
 	FileName string
 	Level    string //default log level:"debug","info","warning","error","panic"
+	Address  string // host:port
 }
 
 //請看 mysql mysqlParameter
