@@ -9,6 +9,7 @@ import (
 
 	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	gas "github.com/firstrow/goautosocket"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -63,6 +64,10 @@ func newLogger(fileNamePrefix, level, address string) (*Logger, error) {
 	l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{})))
 
 	return l, nil
+}
+
+func (l *Logger) NewEntry() *logrus.Entry {
+	return logrus.NewEntry(l.logrus).WithField("requestID", uuid.New())
 }
 
 func (l *Logger) GetLevel(level string) Level {

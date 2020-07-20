@@ -206,7 +206,7 @@ abc123123
 #### 2. Declare a log entry in the beginning of a http request handler function.
     func (h *handler) handleFunc() {
         // Do not use logger directly in http requests
-        entry := logrus.NewEntry(h.logger)
+        entry := h.logger.NewEntry()
         ...
     }
 #### 3. Passing entry into functions whenever logging is needed.
@@ -244,4 +244,5 @@ abc123123
 10. path
 11. method
 12. error
+13. requestID
 ### Find logs in Kibana
