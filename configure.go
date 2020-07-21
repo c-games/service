@@ -13,14 +13,15 @@ import (
 //which load data from config file.
 //Use newConfigure func to create configure.
 type Configure struct {
-	Version   string
-	Logger    *loggerConfig
-	Mysql     *mysqlConfig
-	MQ        *mqConfig
-	HTTP      *httpConfig
-	Redis     *redisConfig
-	Others    map[string]json.RawMessage
-	Websocket *websocketConfig
+	Version     string
+	Environment string
+	Logger      *loggerConfig
+	Mysql       *mysqlConfig
+	MQ          *mqConfig
+	HTTP        *httpConfig
+	Redis       *redisConfig
+	Others      map[string]json.RawMessage
+	Websocket   *websocketConfig
 }
 
 //type lotteryConfig struct {
@@ -121,14 +122,14 @@ type redisConfig struct {
 	PoolSize           int
 }
 type websocketConfig struct {
-	Enable       bool
-	Address      string
-	Port         string
-	ConnPoolSize int
-	ChanPoolSize int
-	AcceptTimeout string //3s
-	AliveTimeout string //eg. 2h3m
-	ReadBufferSize int
+	Enable          bool
+	Address         string
+	Port            string
+	ConnPoolSize    int
+	ChanPoolSize    int
+	AcceptTimeout   string //3s
+	AliveTimeout    string //eg. 2h3m
+	ReadBufferSize  int
 	WriteBufferSize int
 }
 

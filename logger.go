@@ -37,9 +37,10 @@ type Logger struct {
 	logrus        *logrus.Logger
 	forceColor    bool //當輸出到stdout, 是否使用彩色
 	formatterType int
+	environment   string
 }
 
-func newLogger(fileNamePrefix, level, address string) (*Logger, error) {
+func newLogger(fileNamePrefix, level, address, env string) (*Logger, error) {
 
 	if fileNamePrefix == "" {
 		return nil, fmt.Errorf("logger file name is empty")
@@ -52,6 +53,7 @@ func newLogger(fileNamePrefix, level, address string) (*Logger, error) {
 		activeLogFile: true,
 		fullPath:      false,
 		logrus:        logrus.New(),
+		environment:   env,
 	}
 	l.level = l.GetLevel(level)
 	l.SetFormatter(FormatterTypeText, true, false, nil)
@@ -74,6 +76,7 @@ func newLogger(fileNamePrefix, level, address string) (*Logger, error) {
 			"requestID": uuid.New(),
 			"service":   "test",
 			"userID":    "test1",
+			"env":       "local",
 		})))
 	}
 
@@ -81,7 +84,10 @@ func newLogger(fileNamePrefix, level, address string) (*Logger, error) {
 }
 
 func (l *Logger) NewEntry() *logrus.Entry {
-	return logrus.NewEntry(l.logrus).WithField("requestID", uuid.New())
+	return logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
+		"requestID": uuid.New(),
+		"env":       l.environment,
+	})
 }
 
 func (l *Logger) GetLevel(level string) Level {

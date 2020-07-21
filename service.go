@@ -32,7 +32,7 @@ func NewService(configFilePath string) (*Service, error) {
 	}
 
 	//new logger
-	lg, err := newLogger(conf.Logger.FileName, conf.Logger.Level, conf.Logger.Address)
+	lg, err := newLogger(conf.Logger.FileName, conf.Logger.Level, conf.Logger.Address, conf.Environment)
 	if err != nil {
 		return nil, err
 	}

@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/c-games/service"
 	"os"
+
+	"github.com/c-games/service"
 )
 
 func main() {

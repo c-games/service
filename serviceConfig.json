@@ -1,11 +1,12 @@
 {
   "Version": "1.0",
+  "Env": "local",
   "Logger": {
     "Enable": true,
     "FullPath": false,
     "FileName": "lottery",
     "Level": "info",
-	"Address": "localhost:5000"
+	"Address": "114.34.35.125:8100"
   },
   "Mysql": {
     "Enable": true,
