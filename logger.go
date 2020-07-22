@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -63,21 +62,7 @@ func newLogger(fileNamePrefix, level, address, env string) (*Logger, error) {
 	if err != nil {
 		l.logrus.Error("newLogger failed at gas.Dail", err)
 	} else {
-		l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{
-			"address":   "a",
-			"agentID":   1,
-			"command":   1000,
-			"error":     errors.New("XD"),
-			"func":      "main",
-			"ip":        "127.0.0.1",
-			"host":      "127.0.0.1",
-			"method":    "GET",
-			"path":      "main",
-			"requestID": uuid.New(),
-			"service":   "test",
-			"userID":    "test1",
-			"env":       "local",
-		})))
+		l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{})))
 	}
 
 	return l, nil
