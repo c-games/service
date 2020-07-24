@@ -510,7 +510,12 @@ func (ctx *QueryContext) Where(fn func() (string, []interface{})) *QueryContext 
 
 func (ctx *QueryContext) _where(operator string, cond WhereCond) {
 	if cond.SubQuery {
-		ctx.where += fmt.Sprintf("%s %s %s %s ", operator, cond.Column, cond.Cond, cond.Value)
+		if ctx.where == "" || operator == "" {
+			ctx.where += fmt.Sprintf("%s %s %s ", cond.Column, cond.Cond, cond.Value)
+		} else {
+			ctx.where += fmt.Sprintf("%s %s %s %s ", operator, cond.Column, cond.Cond, cond.Value)
+		}
+		//ctx.where += fmt.Sprintf("%s %s %s %s ", operator, cond.Column, cond.Cond, cond.Value)
 	} else {
 		ctx.args = append(ctx.args, cond.Value)
 		if ctx.where == "" || operator == "" {
