@@ -15,6 +15,7 @@ import (
 type Configure struct {
 	Version     string
 	Environment string
+	Service     string
 	Logger      *loggerConfig
 	Mysql       *mysqlConfig
 	MQ          *mqConfig

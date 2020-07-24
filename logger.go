@@ -9,7 +9,6 @@ import (
 
 	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
 	gas "github.com/firstrow/goautosocket"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,9 +36,10 @@ type Logger struct {
 	forceColor    bool //當輸出到stdout, 是否使用彩色
 	formatterType int
 	environment   string
+	service       string
 }
 
-func newLogger(fileNamePrefix, level, address, env string) (*Logger, error) {
+func newLogger(fileNamePrefix, level, address, env, service string) (*Logger, error) {
 
 	if fileNamePrefix == "" {
 		return nil, fmt.Errorf("logger file name is empty")
@@ -53,6 +53,7 @@ func newLogger(fileNamePrefix, level, address, env string) (*Logger, error) {
 		fullPath:      false,
 		logrus:        logrus.New(),
 		environment:   env,
+		service:       service,
 	}
 	l.level = l.GetLevel(level)
 	l.SetFormatter(FormatterTypeText, true, false, nil)
@@ -70,8 +71,9 @@ func newLogger(fileNamePrefix, level, address, env string) (*Logger, error) {
 
 func (l *Logger) NewEntry() *logrus.Entry {
 	return logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
-		"requestID": uuid.New(),
+		"requestID": uuidGetV4(),
 		"env":       l.environment,
+		"service":   l.service,
 	})
 }
 
@@ -365,4 +367,23 @@ func (l *Logger) WithFieldsFile(level Level, fields Fields, args ...interface{})
 	l.log(level, entry, args...)
 	return nil
 
+}
+
+func (l *Logger) LogstashWithFields(level Level, fields Fields, args ...interface{}) {
+	var entry *logrus.Entry
+	l.logrus.SetOutput(os.Stdout)
+
+	if len(fields) > 0 {
+
+		//local Fields to logrus.Fields
+		f := logrus.Fields{}
+		for k, v := range fields {
+			f[k] = v
+		}
+
+		entry = l.logrus.WithFields(f)
+	} else {
+		entry = logrus.NewEntry(l.logrus)
+	}
+	l.log(level, entry, args...)
 }

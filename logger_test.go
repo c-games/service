@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,7 @@ import (
 
 func TestLogger(t *testing.T) {
 
-	l, _ := newLogger("log", "info")
+	l, _ := newLogger("log", "info","114.34.35.125:8100","local","srv")
 
 	fmt.Printf("defalut callReprter: \n")
 	l.SetFormatter(FormatterTypeText, true,true,nil)
@@ -31,6 +32,14 @@ func TestLogger(t *testing.T) {
 	fmt.Printf("caller formatted: \n")
 	l.SetFormatter(FormatterTypeText, true,false, nil)
 	l.WithField(LevelInfo, "caller", l.ReturnCallerFormatted(), "a", "b")
+
+	//
+	ent:=l.NewEntry()
+	lv,_:=logrus.ParseLevel("info")
+	ent.WithField("key","value").Log(lv,"data")
+
+	//
+	ent.WithField("key","value").Error("error")
 }
 
 func TestLogger_fromService(t *testing.T){

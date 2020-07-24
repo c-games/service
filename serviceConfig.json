@@ -1,22 +1,23 @@
 {
   "Version": "1.0",
-  "Env": "local",
+  "Environment": "local",
+  "Service": "game-server",
   "Logger": {
     "Enable": true,
     "FullPath": false,
     "FileName": "lottery",
     "Level": "info",
-	"Address": "114.34.35.125:8100"
+	  "Address": "114.34.35.125:8100"
   },
   "Mysql": {
     "Enable": true,
     "MainDB": {
       "DriverName": "mysql",
       "User": "root",
-      "Password": "CG-taipei1688",
+      "Password": "pass",
       "Net": "tcp",
-      "Address": "pcg1.3ag.xyz:13306",
-      "DBName": "cg_dev",
+      "Address": "localhost:3306",
+      "DBName": "db",
       "Timeout": "1m2s",
       "ReadTimeout": "2s",
       "WriteTimeout": "2s"
@@ -28,15 +29,15 @@
       "Password": "pass",
       "Net": "tcp",
       "Address": "localhost:3306",
-      "DBName": "cg_lottery",
+      "DBName": "db",
       "Timeout": "1m2s",
       "ReadTimeout": "2s",
       "WriteTimeout": "2s"
     }
   },
   "MQ": {
-    "Enable": true,
-    "Url": "amqp://mq:taipei1688@pcg1.3ag.xyz:15672/",
+    "Enable": false,
+    "Url": "amqp://mq:pass@localhost:15672/",
     "ResponseTimeoutSecond": 5,
     "Qos": {
       "PrefetchCount": 100,
@@ -45,7 +46,7 @@
     },
     "QueueDefinition": [
       {
-        "Name": "cg-bjpk10",
+        "Name": "name",
         "Durable": true,
         "AutoDelete": false,
         "Exclusive": false,
@@ -56,7 +57,7 @@
         }
       },
       {
-        "Name": "cg-bjpk10-pipeline-response",
+        "Name": "name",
         "Durable": true,
         "AutoDelete": false,
         "Exclusive": false,
@@ -65,7 +66,7 @@
       }
     ],
     "CommandConsumerParam": {
-      "Queue": "cg-bjpk10",
+      "Queue": "name",
       "Consumer": "",
       "AutoAck": false,
       "Exclusive": false,
@@ -74,7 +75,7 @@
       "Args": {}
     },
     "ResponseConsumerParam": {
-      "Queue": "cg-bjpk10-pipeline-response",
+      "Queue": "name",
       "Consumer": "",
       "AutoAck": false,
       "Exclusive": false,
@@ -109,7 +110,7 @@
   "Others": {
   },
   "Websocket": {
-    "Enable": true,
+    "Enable": false,
     "Address": "",
     "Port": "9000",
     "ConnPoolSize": 10000,

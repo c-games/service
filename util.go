@@ -2,10 +2,10 @@ package service
 
 import (
 	"errors"
-	"math/rand"
-	"time"
 	"github.com/satori/go.uuid"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 const (
@@ -72,8 +72,8 @@ func generateAES256RandomBytes() ([]byte, error) {
 	return b, nil
 }
 
-func uuidGetV4() (string, error) {
+func uuidGetV4() string {
 
 	u := uuid.NewV4()
-	return u.String(), nil
+	return u.String()
 }

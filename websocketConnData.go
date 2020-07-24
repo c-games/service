@@ -28,7 +28,7 @@ func NewWSConn(co *gorillaWebsocket.Conn,
 	receivePacketChan chan *ReceivePacketData,
 	aliveTimeout time.Duration) (*WSConn, error) {
 
-	conUUID, _ := uuidGetV4()
+	conUUID:= uuidGetV4()
 
 	c := &WSConn{
 		active: false,

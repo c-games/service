@@ -111,7 +111,7 @@ type publishUserQueryUserLimitData struct {
 func getCGMessage(serial int, cmd string, responseQueue string, data []byte, waitResponse bool) ([]byte, error) {
 
 	res := &CGMessage{
-		Serial:        serial,
+		Serial:        int64(serial),
 		ResponseQueue: responseQueue,
 		Command:       cmd,
 		Data:          json.RawMessage(data),
