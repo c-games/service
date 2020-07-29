@@ -77,13 +77,7 @@ func (l *Logger) NewEntry() *logrus.Entry {
 	})
 }
 
-func (l *Logger) WithFieldsHook(level Level, fields Fields, args ...interface{}) {
-
-	entry := logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
-		"requestID": uuidGetV4(),
-		"env":       l.environment,
-		"service":   l.service,
-	})
+func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields Fields, args ...interface{}) {
 
 	if len(fields) > 0 {
 

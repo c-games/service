@@ -5,9 +5,9 @@
   "Logger": {
     "Enable": true,
     "FullPath": false,
-    "FileName": "lottery",
+    "FileName": "log",
     "Level": "info",
-	  "Address": "114.34.35.125:8100"
+	  "Address": "localhost:8100"
   },
   "Mysql": {
     "Enable": true,
