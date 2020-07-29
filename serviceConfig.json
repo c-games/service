@@ -7,7 +7,7 @@
     "FullPath": false,
     "FileName": "log",
     "Level": "info",
-	  "Address": "localhost:8100"
+    "Address": "114.32.10.175:8100"
   },
   "Mysql": {
     "Enable": true,

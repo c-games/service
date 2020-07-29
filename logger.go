@@ -77,33 +77,22 @@ func (l *Logger) NewEntry() *logrus.Entry {
 	})
 }
 
-func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields Fields, args ...interface{}) {
-
-	if len(fields) > 0 {
-
-		//local Fields to logrus.Fields
-		f := logrus.Fields{}
-		for k, v := range fields {
-			f[k] = v
-		}
-
-		entry.WithFields(f)
-	}
+func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields logrus.Fields, args ...interface{}) {
 
 	if level == LevelFatal {
-		entry.Fatal(args...)
+		entry.WithFields(fields).Fatal(args...)
 	} else if level == LevelPanic {
-		entry.Panic(args...)
+		entry.WithFields(fields).Panic(args...)
 	} else if level == LevelError {
-		entry.Error(args...)
+		entry.WithFields(fields).Error(args...)
 	} else if level == LevelWarning {
-		entry.Warning(args...)
+		entry.WithFields(fields).Warning(args...)
 	} else if level == LevelInfo {
-		entry.Info(args...)
+		entry.WithFields(fields).Info(args...)
 	} else if level == LevelDebug {
-		entry.Debug(args...)
+		entry.WithFields(fields).Debug(args...)
 	} else {
-		entry.Trace(args...)
+		entry.WithFields(fields).Trace(args...)
 	}
 }
 

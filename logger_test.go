@@ -3,15 +3,17 @@ package service
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
 func TestLogger(t *testing.T) {
 
-	l, _ := newLogger("log", "info","114.34.35.125:8100","local","srv")
+	l, _ := newLogger("log", "info","114.32.10.175:8100","local","srv")
+
+	entry:=l.NewEntry()
+	//lv,_:=logrus.ParseLevel("info")
+	entry.WithField("key","value").Log(logrus.WarnLevel,"data")
+
 
 	fmt.Printf("defalut callReprter: \n")
 	l.SetFormatter(FormatterTypeText, true,true,nil)
@@ -33,20 +35,19 @@ func TestLogger(t *testing.T) {
 	l.SetFormatter(FormatterTypeText, true,false, nil)
 	l.WithField(LevelInfo, "caller", l.ReturnCallerFormatted(), "a", "b")
 
-	//
-	ent:=l.NewEntry()
-	lv,_:=logrus.ParseLevel("info")
-	ent.WithField("key","value").Log(lv,"data")
 
-	//
-	ent.WithField("key","value").Error("error")
+	//hook
+	ent:=l.NewEntry()
+	l.WithFieldsHook(ent,LevelFatal,logrus.Fields{"env":"test1"},"args")
+
 }
 
 func TestLogger_fromService(t *testing.T){
-	wd, _ := os.Getwd()
-	for !strings.HasSuffix(wd, "service") {
-		wd = filepath.Dir(wd)
-	}
+
+	//wd, _ := os.Getwd()
+	//for !strings.HasSuffix(wd, "service") {
+	//	wd = filepath.Dir(wd)
+	//}
 	//t.Logf("wd = %s", wd)
 
 	app, err := NewService("serviceConfig.json")
@@ -65,4 +66,7 @@ func TestLogger_fromService(t *testing.T){
 	l.WithField(LevelInfo, "json", "1", "a", "b")
 	_ = l.WithFieldFile(LevelInfo, "json", 1, "a", "b")
 	_ = l.WithFieldsFile(LevelInfo, Fields{"1": 1, "2": 3}, "a", "b")
+
+
 }
+
