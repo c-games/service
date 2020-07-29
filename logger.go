@@ -77,6 +77,42 @@ func (l *Logger) NewEntry() *logrus.Entry {
 	})
 }
 
+func (l *Logger) WithFieldsHook(level Level, fields Fields, args ...interface{}) {
+
+	entry := logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
+		"requestID": uuidGetV4(),
+		"env":       l.environment,
+		"service":   l.service,
+	})
+
+	if len(fields) > 0 {
+
+		//local Fields to logrus.Fields
+		f := logrus.Fields{}
+		for k, v := range fields {
+			f[k] = v
+		}
+
+		entry.WithFields(f)
+	}
+
+	if level == LevelFatal {
+		entry.Fatal(args...)
+	} else if level == LevelPanic {
+		entry.Panic(args...)
+	} else if level == LevelError {
+		entry.Error(args...)
+	} else if level == LevelWarning {
+		entry.Warning(args...)
+	} else if level == LevelInfo {
+		entry.Info(args...)
+	} else if level == LevelDebug {
+		entry.Debug(args...)
+	} else {
+		entry.Trace(args...)
+	}
+}
+
 func (l *Logger) GetLevel(level string) Level {
 	if level == "debug" {
 		return LevelDebug
@@ -369,21 +405,4 @@ func (l *Logger) WithFieldsFile(level Level, fields Fields, args ...interface{})
 
 }
 
-func (l *Logger) LogstashWithFields(level Level, fields Fields, args ...interface{}) {
-	var entry *logrus.Entry
-	l.logrus.SetOutput(os.Stdout)
 
-	if len(fields) > 0 {
-
-		//local Fields to logrus.Fields
-		f := logrus.Fields{}
-		for k, v := range fields {
-			f[k] = v
-		}
-
-		entry = l.logrus.WithFields(f)
-	} else {
-		entry = logrus.NewEntry(l.logrus)
-	}
-	l.log(level, entry, args...)
-}
