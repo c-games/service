@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"strings"
@@ -70,12 +71,24 @@ func newLogger(fileNamePrefix, level, address, env, service string) (*Logger, er
 }
 
 func (l *Logger) NewEntry() *logrus.Entry {
-	return logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
+	ent:= logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
 		"requestID": uuidGetV4(),
 		"env":       l.environment,
 		"service":   l.service,
 	})
+
+	return ent
 }
+
+//Out sets log output
+//disable stdout, pass in ioutil.Discard
+//l.logrus.Out = ioutil.Discard
+//enable stdout, pass in os.Stdout
+//l.logrus.Out=os.Stdout
+func(l *Logger)Out(out io.Writer){
+	l.logrus.Out = out
+}
+
 
 func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields logrus.Fields, args ...interface{}) {
 
@@ -95,6 +108,7 @@ func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields logrus.F
 		entry.WithFields(fields).Trace(args...)
 	}
 }
+
 
 func (l *Logger) GetLevel(level string) Level {
 	if level == "debug" {
