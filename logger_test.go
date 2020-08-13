@@ -39,7 +39,7 @@ func TestLogger(t *testing.T) {
 	//hook
 	ent:=l.NewEntry()
 	l.Out(ioutil.Discard)
-	l.WithFieldsHook(ent,LevelFatal,logrus.Fields{"cmd.command":"testcmda"},"args")
+	l.WithFieldsHook(ent,LevelFatal,logrus.Fields{"cmd.command":"testcmd0"},"args")
 
 }
 

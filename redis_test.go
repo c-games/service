@@ -307,8 +307,8 @@ func TestRedis_HMGet(t *testing.T) {
 
 	key := "key"
 	data := map[string]interface{}{
-		"k1": 1,
-		"k2": 2,
+		"k1": "1",
+		"k2": "2",
 	}
 	rds.HMSet(key, data)
 
@@ -373,8 +373,8 @@ func TestRedis_HMGetByFields(t *testing.T) {
 
 	key := "key"
 	data := map[string]interface{}{
-		"k1": 1,
-		"k2": 2,
+		"k1": "1",				//redis 出來都是字串
+		"k2": "2",
 	}
 	rds.HMSet(key, data)
 
@@ -407,6 +407,100 @@ func TestRedis_HMGetByFields(t *testing.T) {
 				t.Errorf("Redis.HMGetByField() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRedis_HExist_HGet(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	param := &RedisParameter{
+		Network:      "tcp",
+		Address:      s.Addr(),
+		Password:     "",
+		DB:           0,
+		DialTimeout:  time.Duration(time.Second * 5),
+		ReadTimeout:  time.Duration(time.Second * 5),
+		WriteTimeout: time.Duration(time.Second * 5),
+		PoolSize:     10,
+	}
+	rds, err := NewRedis(param)
+
+	if err != nil {
+		t.Errorf("NewRedis error = %v", err)
+		return
+	}
+
+	key := "key"
+	data := map[string]interface{}{
+		"k1": 1,
+		"k2": 2,
+	}
+	rds.HMSet(key, data)
+
+	var fields []string
+
+	for k := range data {
+		fields = append(fields, k)
+	}
+
+	type args struct {
+		key    string
+		fields string
+	}
+
+	tests := []struct {
+		name      string
+		args      args
+		want      string
+		wantErr   bool
+		wantExist bool
+	}{
+		{
+			"0",
+			args{key: key, fields: "no"},
+			"1",
+			false,
+			false,
+		},
+		{
+			"1",
+			args{key: key, fields: "k1"},
+			"1",
+			false,
+			true,
+		},
+	}
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+
+			fieldExist, err := rds.GetClient().HExists(tt.args.key, tt.args.fields).Result()
+			if err != nil {
+				t.Fatalf("rds.GetClient().HExists() error = %v", err)
+			}
+
+			if fieldExist != tt.wantExist {
+				t.Fatalf("rds.GetClient().HExist() exist = %v, wantExist %v", fieldExist, tt.wantExist)
+			}
+
+			if fieldExist {
+				got, err := rds.GetClient().HGet(tt.args.key, tt.args.fields).Result()
+
+				if (err != nil) != tt.wantErr {
+					t.Errorf("rds.GetClient().HGet() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("rds.GetClient().HGet() = %v, want %v", got, tt.want)
+				}
+			}
+		})
+
 	}
 }
 
@@ -599,7 +693,7 @@ func TestRedis_Delete(t *testing.T) {
 			args: args{
 				key: []string{"key1"},
 			},
-			want: 1,
+			want:    1,
 			wantErr: false,
 		},
 		{
@@ -608,7 +702,7 @@ func TestRedis_Delete(t *testing.T) {
 			args: args{
 				key: []string{"key2", "key3"},
 			},
-			want: 2,
+			want:    2,
 			wantErr: false,
 		},
 	}
