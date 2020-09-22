@@ -9,7 +9,7 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/c-games/common v0.1.0
 	github.com/firstrow/goautosocket v0.0.0-20161106110228-ac6bb839dc77
-	github.com/go-redis/redis v6.15.8+incompatible
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/mux v1.7.4
