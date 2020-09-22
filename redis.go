@@ -104,6 +104,61 @@ func (rds *Redis) GetFloat64(key string, defaultValue float64) (float64, error) 
 	return float64Value, nil
 }
 
+func (rds *Redis) HGetSting(key, field string, defaultValue string) (string, error) {
+	value, err := rds.client.HGet(key, field).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return value, nil
+}
+
+func (rds *Redis) HGetInt(key, field string, defaultValue int) (int, error) {
+	value, err := rds.client.HGet(key, field).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return intValue, nil
+}
+
+func (rds *Redis) HGetInt64(key, field string, defaultValue int64) (int64, error) {
+	value, err := rds.client.HGet(key, field).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	int64Value, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return int64Value, nil
+}
+
+func (rds *Redis) HGetFloat64(key, field string, defaultValue float64) (float64, error) {
+	value, err := rds.client.HGet(key, field).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	float64Value, err := strconv.ParseFloat(value, 10)
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return float64Value, nil
+}
+
 func (rds *Redis) HMSet(key string, data map[string]interface{}) {
 	rds.client.HMSet(key, data)
 }
@@ -119,6 +174,16 @@ func (rds *Redis) HMGet(key string, fields []string) (map[string]interface{}, er
 	}
 
 	return m, nil
+}
+
+func (rds *Redis) HIncrBy(key, field string, incr int64) (int64, error) {
+
+	val, err := rds.client.HIncrBy(key, field, incr).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	return val, nil
 }
 
 func (rds *Redis) HMGetByFields(key string, fields ...string) (map[string]interface{}, error) {

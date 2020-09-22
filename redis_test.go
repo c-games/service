@@ -731,3 +731,334 @@ func TestRedis_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestRedis_HIncrBy(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key   string
+		field string
+		incr  int64
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name:   "key and field already exist",
+			fields: fields{},
+			args: args{
+				key:   "key1",
+				field: "node",
+				incr:  1,
+			},
+			want:    2,
+			wantErr: false,
+		},
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	_ = client.HSet("key1", "node", 1)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: client,
+			}
+			got, err := rds.HIncrBy(tt.args.key, tt.args.field, tt.args.incr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HINCRBY() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.HINCRBY() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_HGetSting(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	_ = client.HSet("key1", "field1", "string")
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key          string
+		field        string
+		defaultValue string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field1",
+				defaultValue: "",
+			},
+			want:    "string",
+			wantErr: false,
+		},
+		{
+			name:   "failed and return default value",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field2",
+				defaultValue: "",
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.HGetSting(tt.args.key, tt.args.field, tt.args.defaultValue)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HGetSting() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.HGetSting() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_HGetInt(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	_ = client.HSet("key1", "field1", 1)
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key          string
+		field        string
+		defaultValue int
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field1",
+				defaultValue: 0,
+			},
+			want:    1,
+			wantErr: false,
+		},
+		{
+			name:   "failed and return default value",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field2",
+				defaultValue: 0,
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.HGetInt(tt.args.key, tt.args.field, tt.args.defaultValue)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HGetInt() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.HGetInt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_HGetInt64(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	_ = client.HSet("key1", "field1", 12345678910)
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key          string
+		field        string
+		defaultValue int64
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field1",
+				defaultValue: 0,
+			},
+			want:    12345678910,
+			wantErr: false,
+		},
+		{
+			name:   "failed and return default value",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field2",
+				defaultValue: 0,
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.HGetInt64(tt.args.key, tt.args.field, tt.args.defaultValue)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HGetInt64() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.HGetInt64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_HGetFloat64(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	_ = client.HSet("key1", "field1", 12.34)
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key          string
+		field        string
+		defaultValue float64
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    float64
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field1",
+				defaultValue: 0,
+			},
+			want:    12.34,
+			wantErr: false,
+		},
+		{
+			name:   "failed and return default value",
+			fields: fields{client},
+			args: args{
+				key:          "key1",
+				field:        "field2",
+				defaultValue: 0,
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.HGetFloat64(tt.args.key, tt.args.field, tt.args.defaultValue)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HGetFloat64() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.HGetFloat64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
