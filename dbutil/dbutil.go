@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/c-games/common/coll"
 	"github.com/c-games/common/str"
+	"github.com/sirupsen/logrus"
 	"reflect"
 )
 
@@ -47,6 +48,8 @@ func GenCreateTable(s interface{}) string {
 	tableName := str.Pascal2Snake(rfs.Name()) // use struct name as default name
 	fields := ""
 	var pk []string
+	var keys []string
+	index := make(map[string]string)
 	for idx := 0 ; idx < rfs.NumField() ; idx++ {
 		f := rfs.Field(idx)
 
@@ -64,11 +67,17 @@ func GenCreateTable(s interface{}) string {
 			pk = append(pk, name)
 		}
 
+		indexName, ok := f.Tag.Lookup("index")
+		if ok {
+			keys = append(keys, indexName)
+			index[indexName] = name
+		}
+
 	}
 
 	var sqlString string
 	if tableName ==  "" {
-		panic("you need to set a table name")
+		logrus.Error("you need to set a table name")
 	} else {
 		sqlString = "CREATE TABLE `" + tableName + "` "
 	}
@@ -82,9 +91,20 @@ func GenCreateTable(s interface{}) string {
 	if len(pk) != 0 {
 		pkStr = "PRIMARY KEY " + "(" + coll.JoinString(pk, ",") + ")"
 	}
+	indexStr := ""
+	indexCounts := len(keys)
+	for _, indexName := range keys {
+		columnName := index[indexName]
+		if indexCounts == 1 {
+			indexStr = indexStr + ",KEY " + "`" + indexName + "` ("+ columnName +")"
+		} else {
+			indexStr = indexStr + ",KEY " + "`" + indexName + "` ("+ columnName +")"
+		}
+		indexCounts--
+	}
 
 
-	sqlString = sqlString + "(\n" + fields + pkStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 	//fmt.Println(sqlString)
 	return sqlString
