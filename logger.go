@@ -7,8 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
+	logrustash "github.com/idtksrv/logrus-logstash-hook"
 	gas "github.com/firstrow/goautosocket"
 	"github.com/sirupsen/logrus"
 )
