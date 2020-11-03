@@ -127,10 +127,11 @@ func GenCreateTable(s interface{}) string {
 		compoundIndexStr = compoundIndexStr + ",KEY " + "`" + indexName + "` (" + innerStr + ")"
 
 	}
+	fmt.Printf("compoundIndexStr: %s\n", compoundIndexStr)
 
 	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + compoundIndexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-	//fmt.Println(sqlString)
+	fmt.Println(sqlString)
 	return sqlString
 }
 
