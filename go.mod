@@ -13,8 +13,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/idtksrv/logrus-logstash-hook v1.1.0
-	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
+	github.com/idtksrv/logrus-logstash-hook v1.1.1
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
