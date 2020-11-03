@@ -49,7 +49,9 @@ func GenCreateTable(s interface{}) string {
 	fields := ""
 	var pk []string
 	var keys []string
+	var compoundKeys []string
 	index := make(map[string]string)
+	compoundIndex := make(map[string][]string)
 	for idx := 0 ; idx < rfs.NumField() ; idx++ {
 		f := rfs.Field(idx)
 
@@ -71,6 +73,16 @@ func GenCreateTable(s interface{}) string {
 		if ok {
 			keys = append(keys, indexName)
 			index[indexName] = name
+		}
+
+		compoundIndexName, ok := f.Tag.Lookup("compound_index")
+		if ok {
+			if key, ok := compoundIndex[compoundIndexName]; ok {
+				compoundIndex[compoundIndexName] = append(compoundIndex[compoundIndexName], name)
+			} else {
+				compoundKeys = append(key)
+				compoundIndex[compoundIndexName] = key
+			}
 		}
 
 	}
@@ -101,6 +113,37 @@ func GenCreateTable(s interface{}) string {
 			indexStr = indexStr + ",KEY " + "`" + indexName + "` ("+ columnName +")"
 		}
 		indexCounts--
+	}
+
+	compoundIndexStr := ""
+	innerStr := ""
+	compoundIndexCounts := len(compoundKeys)
+	for _, indexName := range compoundKeys {
+		columnsName := compoundIndex[indexName]
+		if compoundIndexCounts == 1 {
+			innerCounts := len(columnsName)
+			for _, columnName := range columnsName {
+				if innerCounts == 1 {
+					innerStr = innerStr + columnName
+				} else {
+					innerStr = innerStr + columnName + ","
+				}
+				innerCounts--
+			}
+			compoundIndexStr = compoundIndexStr + ",KEY " + "`" + indexName + "` ("+ innerStr +")"
+		} else {
+			innerCounts := len(columnsName)
+			for _, columnName := range columnsName {
+				if innerCounts == 1 {
+					innerStr = innerStr + columnName
+				} else {
+					innerStr = innerStr + columnName + ","
+				}
+				innerCounts--
+			}
+			compoundIndexStr = compoundIndexStr + ",KEY " + "`" + indexName + "` ("+ innerStr +")"
+		}
+		compoundIndexCounts--
 	}
 
 
