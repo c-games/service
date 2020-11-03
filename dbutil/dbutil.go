@@ -128,7 +128,7 @@ func GenCreateTable(s interface{}) string {
 
 	}
 
-	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + compoundIndexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 	//fmt.Println(sqlString)
 	return sqlString
