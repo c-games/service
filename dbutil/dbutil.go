@@ -76,15 +76,11 @@ func GenCreateTable(s interface{}) string {
 
 		compoundIndexName, ok := f.Tag.Lookup("compound_index")
 		if ok {
-			fmt.Printf("compoundIndexName: %s\n", compoundIndexName)
 			if _, ok := compoundIndex[compoundIndexName]; ok {
 				compoundIndex[compoundIndexName] = append(compoundIndex[compoundIndexName], name)
-				fmt.Printf("compoundIndex: %+v\n", compoundIndex)
 			} else {
 				compoundKeys = append(compoundKeys, compoundIndexName)
 				compoundIndex[compoundIndexName] = append(compoundIndex[compoundIndexName], name)
-				fmt.Printf("keys: %s\n", compoundKeys)
-				fmt.Printf("compoundIndex: %+v\n", compoundIndex)
 			}
 		}
 
@@ -127,7 +123,6 @@ func GenCreateTable(s interface{}) string {
 		compoundIndexStr = compoundIndexStr + ",KEY " + "`" + indexName + "` (" + innerStr + ")"
 
 	}
-	fmt.Printf("compoundIndexStr: %s\n", compoundIndexStr)
 
 	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + compoundIndexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
