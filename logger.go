@@ -2,14 +2,14 @@ package service
 
 import (
 	"fmt"
+	gas "github.com/firstrow/goautosocket"
+	logrustash "github.com/idtksrv/logrus-logstash-hook"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"runtime"
 	"strings"
 	"time"
-	logrustash "github.com/idtksrv/logrus-logstash-hook"
-	gas "github.com/firstrow/goautosocket"
-	"github.com/sirupsen/logrus"
 )
 
 type Level uint32
@@ -26,6 +26,15 @@ const (
 	FormatterTypeJSON
 )
 
+type LoggerParameter struct {
+	ELKEnable   bool
+	LogFileName string
+	Level       string
+	Address     string
+	Environment string
+	Service     string
+}
+
 type Logger struct {
 	level         Level
 	logFileName   string
@@ -37,40 +46,45 @@ type Logger struct {
 	formatterType int
 	environment   string
 	service       string
+	elkEnable     bool
 }
 
-func newLogger(fileNamePrefix, level, address, env, service string) (*Logger, error) {
+//func newLogger(elkEnable bool, fileNamePrefix, level, address, env, service string) (*Logger, error) {
+func newLogger(param *LoggerParameter) (*Logger, error) {
 
-	if fileNamePrefix == "" {
+	if param.LogFileName == "" {
 		return nil, fmt.Errorf("logger file name is empty")
 	}
 
 	l := &Logger{
 		level:         0,
-		logFileName:   fileNamePrefix,
+		logFileName:   param.LogFileName,
 		activeLog:     true,
 		activeLogFile: true,
 		fullPath:      false,
 		logrus:        logrus.New(),
-		environment:   env,
-		service:       service,
+		environment:   param.Environment,
+		service:       param.Service,
+		elkEnable:     param.ELKEnable,
 	}
-	l.level = l.GetLevel(level)
+	l.level = l.GetLevel(param.Level)
 	l.SetFormatter(FormatterTypeText, true, false, nil)
 	l.logrus.SetReportCaller(false) //logrus內部的列印呼叫的func和檔案、行數，沒用
 
-	conn, err := gas.Dial("tcp", address)
-	if err != nil {
-		l.logrus.Error("newLogger failed at gas.Dail", err)
-	} else {
-		l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{})))
+	if param.ELKEnable {
+		conn, err := gas.Dial("tcp", param.Address)
+		if err != nil {
+			l.logrus.Error("newLogger failed at gas.Dail", err)
+		} else {
+			l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{})))
+		}
 	}
 
 	return l, nil
 }
 
 func (l *Logger) NewEntry() *logrus.Entry {
-	ent:= logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
+	ent := logrus.NewEntry(l.logrus).WithFields(logrus.Fields{
 		"requestID": uuidGetV4(),
 		"env":       l.environment,
 		"service":   l.service,
@@ -84,12 +98,11 @@ func (l *Logger) NewEntry() *logrus.Entry {
 //l.logrus.Out = ioutil.Discard
 //enable stdout, pass in os.Stdout
 //l.logrus.Out=os.Stdout
-func(l *Logger)Out(out io.Writer){
+func (l *Logger) Out(out io.Writer) {
 	l.logrus.Out = out
 }
 
-
-func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields logrus.Fields, args ...interface{}) {
+func (l *Logger) WithFieldsHook(entry *logrus.Entry, level Level, fields logrus.Fields, args ...interface{}) {
 
 	if level == LevelFatal {
 		entry.WithFields(fields).Fatal(args...)
@@ -107,7 +120,6 @@ func (l *Logger) WithFieldsHook(entry *logrus.Entry,level Level, fields logrus.F
 		entry.WithFields(fields).Trace(args...)
 	}
 }
-
 
 func (l *Logger) GetLevel(level string) Level {
 	if level == "debug" {
@@ -400,5 +412,3 @@ func (l *Logger) WithFieldsFile(level Level, fields Fields, args ...interface{})
 	return nil
 
 }
-
-

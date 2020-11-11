@@ -1,5 +1,5 @@
 {
-  "Version": "1.0",
+  "Version": "2.0",
   "Environment": "local",
   "Service": "game-server",
   "Logger": {
@@ -19,8 +19,12 @@
       "Address": "localhost:3306",
       "DBName": "db",
       "Timeout": "1m2s",
-      "ReadTimeout": "2s",
-      "WriteTimeout": "2s"
+      "ReadTimeout": "1m2s",
+      "WriteTimeout": "1m2s",
+      "SetMaxOpenConns":0,
+      "SetMaxIdleConns":200,
+      "SetConnMaxIdleTime":180,
+      "SetConnMaxLifetime":1800
     },
     "ReadWriteSplitting": false,
     "ReadOnlyDB": {
@@ -30,9 +34,13 @@
       "Net": "tcp",
       "Address": "localhost:3306",
       "DBName": "db",
-      "Timeout": "1m2s",
-      "ReadTimeout": "2s",
-      "WriteTimeout": "2s"
+      "Timeout": "1m",
+      "ReadTimeout": "1m2s",
+      "WriteTimeout": "1m2s",
+      "SetMaxOpenConns":0,
+      "SetMaxIdleConns":200,
+      "SetConnMaxIdleTime":180,
+      "SetConnMaxLifetime":1800
     }
   },
   "MQ": {

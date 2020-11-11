@@ -46,17 +46,21 @@ type mysqlConfig struct {
 }
 
 type mysqlDBParam struct {
-	DriverName     string
-	DataSourceName string
-	User           string
-	Password       string
-	Net            string
-	Address        string
-	DBName         string
-	Timeout        string //string, 在EnableMySQL時改duration
-	ReadTimeout    string //string, 在EnableMySQL時改duration
-	WriteTimeout   string //string, 在EnableMySQL時改duration
-	ParseTime      bool
+	DriverName         string
+	DataSourceName     string
+	User               string
+	Password           string
+	Net                string
+	Address            string
+	DBName             string
+	Timeout            string //string, 在EnableMySQL時改duration
+	ReadTimeout        string //string, 在EnableMySQL時改duration
+	WriteTimeout       string //string, 在EnableMySQL時改duration
+	ParseTime          bool
+	SetMaxOpenConns    int //sec
+	SetMaxIdleConns    int //sec
+	SetConnMaxIdleTime int //sec
+	SetConnMaxLifetime int //sec
 }
 
 type mqConfig struct {

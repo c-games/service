@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+
 //Lottery is lottery server framework.
 type Service struct {
 	configure    *Configure
@@ -32,7 +33,15 @@ func NewService(configFilePath string) (*Service, error) {
 	}
 
 	//new logger
-	lg, err := newLogger(conf.Logger.FileName, conf.Logger.Level, conf.Logger.Address, conf.Environment,conf.Service)
+	lp := &LoggerParameter{
+		ELKEnable:   conf.Logger.Enable,
+		LogFileName: conf.Logger.FileName,
+		Level:       conf.Logger.Level,
+		Address:     conf.Logger.Address,
+		Environment: conf.Environment,
+		Service:     conf.Service,
+	}
+	lg, err := newLogger(lp)
 	if err != nil {
 		return nil, err
 	}
@@ -142,38 +151,46 @@ func (s *Service) enableMySQL() (*MySQL, error) {
 	wm, _ := time.ParseDuration(mainDBConf.WriteTimeout)
 
 	mainDBParam := &MysqlParameter{
-		DriverName:   mainDBConf.DriverName,
-		User:         mainDBConf.User,
-		Password:     mainDBConf.Password,
-		Net:          mainDBConf.Net,
-		Address:      mainDBConf.Address,
-		DBName:       mainDBConf.DBName,
-		Timeout:      tm,
-		ReadTimeout:  rm,
-		WriteTimeout: wm,
-		ParseTime:    mainDBConf.ParseTime,
+		DriverName:         mainDBConf.DriverName,
+		User:               mainDBConf.User,
+		Password:           mainDBConf.Password,
+		Net:                mainDBConf.Net,
+		Address:            mainDBConf.Address,
+		DBName:             mainDBConf.DBName,
+		Timeout:            tm,
+		ReadTimeout:        rm,
+		WriteTimeout:       wm,
+		ParseTime:          mainDBConf.ParseTime,
+		SetMaxOpenConns:    mainDBConf.SetMaxOpenConns,
+		SetMaxIdleConns:    mainDBConf.SetMaxIdleConns,
+		SetConnMaxIdleTime: time.Duration(mainDBConf.SetConnMaxIdleTime) * time.Second,
+		SetConnMaxLifetime: time.Duration(mainDBConf.SetConnMaxLifetime) * time.Second,
 	}
 
 	var readOnlyDBParam *MysqlParameter
 
 	//有讀寫分離
 	if s.configure.Mysql.ReadWriteSplitting {
-		wDBConf := s.configure.Mysql.ReadOnlyDB
-		tm, _ := time.ParseDuration(wDBConf.Timeout)
-		rm, _ := time.ParseDuration(wDBConf.ReadTimeout)
-		wm, _ := time.ParseDuration(wDBConf.WriteTimeout)
+		readOnlyDBConf := s.configure.Mysql.ReadOnlyDB
+		tm, _ := time.ParseDuration(readOnlyDBConf.Timeout)
+		rm, _ := time.ParseDuration(readOnlyDBConf.ReadTimeout)
+		wm, _ := time.ParseDuration(readOnlyDBConf.WriteTimeout)
 
 		readOnlyDBParam = &MysqlParameter{
-			DriverName:   mainDBConf.DriverName,
-			User:         mainDBConf.User,
-			Password:     mainDBConf.Password,
-			Net:          mainDBConf.Net,
-			Address:      mainDBConf.Address,
-			DBName:       mainDBConf.DBName,
-			Timeout:      tm,
-			ReadTimeout:  rm,
-			WriteTimeout: wm,
-			ParseTime:    mainDBConf.ParseTime,
+			DriverName:         readOnlyDBConf.DriverName,
+			User:               readOnlyDBConf.User,
+			Password:           readOnlyDBConf.Password,
+			Net:                readOnlyDBConf.Net,
+			Address:            readOnlyDBConf.Address,
+			DBName:             readOnlyDBConf.DBName,
+			Timeout:            tm,
+			ReadTimeout:        rm,
+			WriteTimeout:       wm,
+			ParseTime:          readOnlyDBConf.ParseTime,
+			SetMaxOpenConns:    readOnlyDBConf.SetMaxOpenConns,
+			SetMaxIdleConns:    readOnlyDBConf.SetMaxIdleConns,
+			SetConnMaxIdleTime: time.Duration(readOnlyDBConf.SetConnMaxIdleTime) * time.Second,
+			SetConnMaxLifetime: time.Duration(readOnlyDBConf.SetConnMaxLifetime) * time.Second,
 		}
 	}
 

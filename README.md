@@ -12,25 +12,47 @@ Service is basic service package used to build your own service.
 ```
 {
 	"Version":"1.0",
+	"Environment": "local",
+    "Service": "what-server",
 	"Logger":{
 	    "Enable":true,              // enable logger
 	    "FullPath":false,           // log with full path or not
-		"FileName":"lottery",	//logger file name
-		"Level":"info"	 	//default level:"debug", "info", "warning", "error", "panic"
+		"FileName":"lottery",	    //logger file name
+		"Level":"info"	 	        //default level:"debug", "info", "warning", "error", "panic"
+		"Address": "10.32.10.175:8100"      //elk address
 	},
 	"Mysql":{
 		"Enable":true,  //true=enable, false=disable
 		"MainDB":{
 			"DriverName":"mysql",
 			"User":"user",						//account
-			"Password":"pass",				        //password
+			"Password":"pass",				    //password
 			"Net":"tcp",   						//net string
-			"Address":"localhost:3306",		  	        //ip:port
+			"Address":"localhost:3306",		  	//ip:port
 			"DBName":"",						//db name
-			"Timeout":"1m2s",
-			"ReadTimeout":"2s",
-			"WriteTimeout":"2s"
-		},
+			"Timeout":"1m",                     //Timeout for establishing connections, aka dial timeout.
+			"ReadTimeout":"1m5s",               //io write timeout
+			"WriteTimeout":"1m5s"               //io read timeout
+			"SetMaxOpenConns":0,                //maximum number of open connections to the database
+			                                    //If n <= 0, then there is no limit
+			                                    //golang default is 0
+			"SetMaxIdleConns":200,              //maximum number of connections in the idle connection pool
+			                                    //If n <= 0, no idle connections are retained.
+			                                    //golang defaut is 2
+			                                    //If MaxOpenConns is greater than 0 but less than the new MaxIdleConns, 
+			                                    //then the new MaxIdleConns will be reduced to match the MaxOpenConns limit.
+			"SetConnMaxIdleTime":180,           //maximum amount of time a connection may be idle
+			                                    //Expired connections may be closed lazily before reuse.
+			                                    //If d <= 0, connections are not closed due to a connection's idle time.
+			                                    //單位秒
+			"SetConnMaxLifetime":2000,          //maximum amount of time a connection may be reused
+			                                    //Expired connections may be closed lazily before reuse
+		                                        //If d <= 0, connections are not closed due to a connection's age
+		                                        //連線建立後多久會過期，之後不能重用。
+		                                        //如果這個連線從建立開始後一直使用，是可以超過maxLifeTime。只是不能被重用。
+		                                        //超過maxLifeTime會被關閉。
+		                                        //單位秒
+		},    
 		"ReadWriteSplitting":false,
 		"ReadOnlyDB":{
 			"DriverName":"mysql",
@@ -39,9 +61,13 @@ Service is basic service package used to build your own service.
 			"Net":"tcp",
 			"Address":"localhost:3306",
 			"DBName":"",
-			"Timeout":"1m2s",
-			"ReadTimeout":"2s",
-			"WriteTimeout":"2s"
+			"Timeout":"1m",
+			"ReadTimeout":"1m2s",
+			"WriteTimeout":"1m2s"
+			"SetMaxOpenConns":0,
+			"SetMaxIdleConns":200,
+			"SetConnMaxIdleTime":180,
+			"SetConnMaxLifetime":2000,
 		}
 	},
 	"MQ":{

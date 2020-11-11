@@ -14,6 +14,11 @@ import (
 	"time"
 )
 
+const (
+	MAIN_DB      string = "main"
+	READ_ONLY_DB string = "readOnly"
+)
+
 type sqlQueryExec func(rows *sql.Rows) (json.RawMessage, error)
 type sqlQueryExec_retArrInterface func(rows *sql.Rows) ([]interface{}, error)
 
@@ -28,16 +33,20 @@ type MySQL struct {
 
 //請看 mysql mysqlParameter
 type MysqlParameter struct {
-	DriverName   string
-	User         string        // Username
-	Password     string        // Password (requires User)
-	Net          string        // Network type
-	Address      string        // Network address (requires Net)
-	DBName       string        // Database name
-	Timeout      time.Duration // Dial timeout
-	ReadTimeout  time.Duration // I/O read timeout
-	WriteTimeout time.Duration // I/O write timeout
-	ParseTime    bool          // parse db time
+	DriverName         string
+	User               string        // Username
+	Password           string        // Password (requires User)
+	Net                string        // Network type
+	Address            string        // Network address (requires Net)
+	DBName             string        // Database name
+	Timeout            time.Duration // Dial timeout
+	ReadTimeout        time.Duration // I/O read timeout
+	WriteTimeout       time.Duration // I/O write timeout
+	ParseTime          bool          // parse db time
+	SetMaxOpenConns    int           //sec
+	SetMaxIdleConns    int           //sec
+	SetConnMaxIdleTime time.Duration
+	SetConnMaxLifetime time.Duration
 }
 
 /*
@@ -79,6 +88,10 @@ func NewMySQL(mainDBConfig *MysqlParameter, readWriteSplitting bool, readOnlyDBC
 		return nil, err
 	}
 
+	mainDB.SetMaxOpenConns(mainDBConfig.SetMaxOpenConns)
+	mainDB.SetMaxIdleConns(mainDBConfig.SetMaxIdleConns)
+	mainDB.SetConnMaxLifetime(mainDBConfig.SetConnMaxLifetime)
+
 	var readOnlyConf *goMysql.Config
 	formatStr = ""
 	var readDB *sql.DB
@@ -100,6 +113,10 @@ func NewMySQL(mainDBConfig *MysqlParameter, readWriteSplitting bool, readOnlyDBC
 		if err != nil {
 			return nil, err
 		}
+
+		readDB.SetMaxOpenConns(readOnlyDBConfig.SetMaxOpenConns)
+		readDB.SetMaxIdleConns(readOnlyDBConfig.SetMaxIdleConns)
+		readDB.SetConnMaxLifetime(readOnlyDBConfig.SetConnMaxLifetime)
 	}
 
 	return &MySQL{
@@ -168,10 +185,16 @@ func (ms *MySQL) Close() {
 }
 
 //SetMainDB for sql mock test
-func (ms *MySQL)SetMainDB(db *sql.DB){
-	ms.mainDB=db
+func (ms *MySQL) SetMainDB(db *sql.DB) {
+	ms.mainDB = db
 }
 
+func (ms *MySQL)Stats(whichDB string)sql.DBStats{
+	if whichDB==MAIN_DB{
+		return ms.mainDB.Stats()
+	}
+	return ms.readDB.Stats()
+}
 //SelectTableNames returns all table name of target db.
 func (ms *MySQL) SelectTableNames(dbName string) ([]string, error) {
 	res := make([]string, 0)
