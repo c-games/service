@@ -189,12 +189,22 @@ func (ms *MySQL) SetMainDB(db *sql.DB) {
 	ms.mainDB = db
 }
 
-func (ms *MySQL)Stats(whichDB string)sql.DBStats{
-	if whichDB==MAIN_DB{
-		return ms.mainDB.Stats()
+func (ms *MySQL) Stats(whichDB string) (sql.DBStats, error) {
+	if whichDB == MAIN_DB {
+		if ms.mainDB != nil {
+			return ms.mainDB.Stats(), nil
+
+		}
+		return sql.DBStats{}, errors.New("mainDB is nil")
 	}
-	return ms.readDB.Stats()
+
+	if ms.readDB != nil {
+		return ms.readDB.Stats(), nil
+
+	}
+	return sql.DBStats{}, errors.New("readDB is nil")
 }
+
 //SelectTableNames returns all table name of target db.
 func (ms *MySQL) SelectTableNames(dbName string) ([]string, error) {
 	res := make([]string, 0)
