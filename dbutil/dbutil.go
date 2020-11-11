@@ -9,14 +9,13 @@ import (
 	"reflect"
 )
 
-
 func GenDropTable(s interface{}) string {
 	rfs := reflect.TypeOf(s)
 
 	tableName := str.Pascal2Snake(rfs.Name()) // use struct name as default name
 	fields := ""
 	var pk []string
-	for idx := 0 ; idx < rfs.NumField() ; idx++ {
+	for idx := 0; idx < rfs.NumField(); idx++ {
 		f := rfs.Field(idx)
 
 		if f.Name == "ITable" {
@@ -49,8 +48,10 @@ func GenCreateTable(s interface{}) string {
 	fields := ""
 	var pk []string
 	var keys []string
+	var compoundKeys []string
 	index := make(map[string]string)
-	for idx := 0 ; idx < rfs.NumField() ; idx++ {
+	compoundIndex := make(map[string][]string)
+	for idx := 0; idx < rfs.NumField(); idx++ {
 		f := rfs.Field(idx)
 
 		if f.Name == "ITable" {
@@ -73,18 +74,27 @@ func GenCreateTable(s interface{}) string {
 			index[indexName] = name
 		}
 
+		compoundIndexName, ok := f.Tag.Lookup("compound_index")
+		if ok {
+			if _, ok := compoundIndex[compoundIndexName]; ok {
+				compoundIndex[compoundIndexName] = append(compoundIndex[compoundIndexName], name)
+			} else {
+				compoundKeys = append(compoundKeys, compoundIndexName)
+				compoundIndex[compoundIndexName] = append(compoundIndex[compoundIndexName], name)
+			}
+		}
+
 	}
 
 	var sqlString string
-	if tableName ==  "" {
+	if tableName == "" {
 		logrus.Error("you need to set a table name")
 	} else {
 		sqlString = "CREATE TABLE `" + tableName + "` "
 	}
 
-
-	if len(fields) > 0 && len(pk) == 0{
-		fields = fields[:len(fields) - 2]
+	if len(fields) > 0 && len(pk) == 0 {
+		fields = fields[:len(fields)-2]
 	}
 
 	pkStr := ""
@@ -92,21 +102,31 @@ func GenCreateTable(s interface{}) string {
 		pkStr = "PRIMARY KEY " + "(" + coll.JoinString(pk, ",") + ")"
 	}
 	indexStr := ""
-	indexCounts := len(keys)
 	for _, indexName := range keys {
 		columnName := index[indexName]
-		if indexCounts == 1 {
-			indexStr = indexStr + ",KEY " + "`" + indexName + "` ("+ columnName +")"
-		} else {
-			indexStr = indexStr + ",KEY " + "`" + indexName + "` ("+ columnName +")"
-		}
-		indexCounts--
+		indexStr = indexStr + ",KEY " + "`" + indexName + "` (" + columnName + ")"
 	}
 
+	compoundIndexStr := ""
+	innerStr := ""
+	for _, indexName := range compoundKeys {
+		columnsName := compoundIndex[indexName]
+		innerCounts := len(columnsName)
+		for _, columnName := range columnsName {
+			if innerCounts == 1 {
+				innerStr = innerStr + columnName
+			} else {
+				innerStr = innerStr + columnName + ","
+			}
+			innerCounts--
+		}
+		compoundIndexStr = compoundIndexStr + ",KEY " + "`" + indexName + "` (" + innerStr + ")"
 
-	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+	}
 
-	//fmt.Println(sqlString)
+	sqlString = sqlString + "(\n" + fields + pkStr + indexStr + compoundIndexStr + ") ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+	fmt.Println(sqlString)
 	return sqlString
 }
 
@@ -123,7 +143,7 @@ func GenCreateIndex(s interface{}) string {
 	index := make(map[string][]string)
 	var keys []string
 	//var idx map[string][]string
-	for idx := 0 ; idx < rfs.NumField() ; idx++ {
+	for idx := 0; idx < rfs.NumField(); idx++ {
 		f := rfs.Field(idx)
 		indexName, ok := f.Tag.Lookup("index")
 		if ok {
@@ -149,7 +169,6 @@ func GenCreateIndex(s interface{}) string {
 
 	return sqlString
 }
-
 
 func CompareParams(params []interface{}, expectParamCount int, expectParamTypes []reflect.Kind) error {
 	totalParams := len(params)
@@ -183,7 +202,7 @@ func QueryCondition(queryResult Scannable, rowLike SqlRowLike) error {
 	err := queryResult.Scan(rowLike)
 	if err == nil {
 		return nil
-	} else if err == sql.ErrNoRows  {
+	} else if err == sql.ErrNoRows {
 		return nil
 	} else {
 		// rows 的 Scan 有可能會因為沒有先 call Next() 而出錯，那需要自己處理，所以直接 return err
@@ -198,7 +217,6 @@ func QueryCondition2(queryResultType reflect.Type, rowLike SqlRowLike) (interfac
 	err := QueryCondition(elementInstent.(Scannable), rowLike)
 	return elementInstent, err
 }
-
 
 // key value map 轉成 sql update 的 string
 func GenUpdateKeysAndValueList(updateData map[string]interface{}) (string, []interface{}) {
