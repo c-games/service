@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+
 func TestUpdateUserAddress(t *testing.T) {
 	batch := []string{
 		`CREATE TABLE address (id BIGSERIAL PRIMARY KEY, street TEXT, street_number INT);`,
@@ -27,6 +28,10 @@ func TestUpdateUserAddress(t *testing.T) {
 		d,
 		d,
 		false,
+		100,
+		100,
+		10,
+		10,
 	}
 	mysql, err := NewMySQL(ms, false, nil)
 
@@ -48,6 +53,7 @@ func TestUpdateUserAddress(t *testing.T) {
 		t.Fatalf("Too bad! unexpected error: %s", err)
 	}
 }
+
 
 func TestORM(t *testing.T) {
 	db, mock, err := sqlmock.New()

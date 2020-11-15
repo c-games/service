@@ -193,7 +193,6 @@ func (ms *MySQL) Stats(whichDB string) (sql.DBStats, error) {
 	if whichDB == MAIN_DB {
 		if ms.mainDB != nil {
 			return ms.mainDB.Stats(), nil
-
 		}
 		return sql.DBStats{}, errors.New("mainDB is nil")
 	}
