@@ -8,7 +8,16 @@ import (
 
 func TestLogger(t *testing.T) {
 
-	l, _ := newLogger("log", "info","114.32.10.175:8100","local","srv")
+	p:=& LoggerParameter{
+		false,
+		"log",
+		"error",
+		"114.32.10.175:8100",
+		"local",
+		"srv",
+	}
+
+	l, _ := newLogger(p)
 
 	entry:=l.NewEntry()
 	//lv,_:=logrus.ParseLevel("info")
