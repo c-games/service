@@ -47,6 +47,7 @@ type Logger struct {
 	environment   string
 	service       string
 	elkEnable     bool
+	logstashEntry *logrus.Entry
 }
 
 //func newLogger(elkEnable bool, fileNamePrefix, level, address, env, service string) (*Logger, error) {
@@ -67,6 +68,7 @@ func newLogger(param *LoggerParameter) (*Logger, error) {
 		service:       param.Service,
 		elkEnable:     param.ELKEnable,
 	}
+	l.logstashEntry=l.NewEntry()
 	l.level = l.GetLevel(param.Level)
 	l.SetFormatter(FormatterTypeText, true, false, nil)
 	l.logrus.SetReportCaller(false) //logrus內部的列印呼叫的func和檔案、行數，沒用
@@ -104,20 +106,36 @@ func (l *Logger) Out(out io.Writer) {
 
 func (l *Logger) WithFieldsHook(entry *logrus.Entry, level Level, fields logrus.Fields, args ...interface{}) {
 
+	//if level == LevelFatal {
+	//	entry.WithFields(fields).Fatal(args...)
+	//} else if level == LevelPanic {
+	//	entry.WithFields(fields).Panic(args...)
+	//} else if level == LevelError {
+	//	entry.WithFields(fields).Error(args...)
+	//} else if level == LevelWarning {
+	//	entry.WithFields(fields).Warning(args...)
+	//} else if level == LevelInfo {
+	//	entry.WithFields(fields).Info(args...)
+	//} else if level == LevelDebug {
+	//	entry.WithFields(fields).Debug(args...)
+	//} else {
+	//	entry.WithFields(fields).Trace(args...)
+	//}
+
 	if level == LevelFatal {
-		entry.WithFields(fields).Fatal(args...)
+		l.logstashEntry.WithFields(fields).Fatal(args...)
 	} else if level == LevelPanic {
-		entry.WithFields(fields).Panic(args...)
+		l.logstashEntry.WithFields(fields).Panic(args...)
 	} else if level == LevelError {
-		entry.WithFields(fields).Error(args...)
+		l.logstashEntry.WithFields(fields).Error(args...)
 	} else if level == LevelWarning {
-		entry.WithFields(fields).Warning(args...)
+		l.logstashEntry.WithFields(fields).Warning(args...)
 	} else if level == LevelInfo {
-		entry.WithFields(fields).Info(args...)
+		l.logstashEntry.WithFields(fields).Info(args...)
 	} else if level == LevelDebug {
-		entry.WithFields(fields).Debug(args...)
+		l.logstashEntry.WithFields(fields).Debug(args...)
 	} else {
-		entry.WithFields(fields).Trace(args...)
+		l.logstashEntry.WithFields(fields).Trace(args...)
 	}
 }
 
