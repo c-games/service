@@ -208,6 +208,20 @@ func (rds *Redis) Exist (key string) int64 {
 	return result
 }
 
+func (rds *Redis) HExistAndGetString (key, fields string) (string, bool, error) {
+	isExist, _ := rds.client.HExists(key, fields).Result()
+	if isExist {
+		result, err := rds.client.HGet(key, fields).Result()
+		if err != nil {
+			return "", false, err
+		} else {
+			return  result, true, nil
+		}
+	} else {
+		return "", false, nil
+	}
+}
+
 func (rds *Redis) Expire (key string, expire time.Duration) bool {
 	result, _ := rds.client.Expire(key, expire).Result()
 

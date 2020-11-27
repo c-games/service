@@ -373,7 +373,7 @@ func TestRedis_HMGetByFields(t *testing.T) {
 
 	key := "key"
 	data := map[string]interface{}{
-		"k1": "1",				//redis 出來都是字串
+		"k1": "1", //redis 出來都是字串
 		"k2": "2",
 	}
 	rds.HMSet(key, data)
@@ -1058,6 +1058,76 @@ func TestRedis_HGetFloat64(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("Redis.HGetFloat64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_HExistAndGetString(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	_ = client.HSet("key1", "field1", 12.34)
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key    string
+		fields string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+		want1   bool
+		wantErr bool
+	}{
+		{
+			name:   "fields exist",
+			fields: fields{client},
+			args: args{
+				key:    "key1",
+				fields: "field1",
+			},
+			want: "12.34",
+			want1: true,
+			wantErr: false,
+		},
+		{
+			name:   "fields not exist",
+			fields: fields{client},
+			args: args{
+				key:    "key1",
+				fields: "field2",
+			},
+			want: "",
+			want1: false,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, got1, err := rds.HExistAndGetString(tt.args.key, tt.args.fields)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HExistAndGetString() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.HExistAndGetString() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("Redis.HExistAndGetString() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
