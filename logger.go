@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	gas "github.com/firstrow/goautosocket"
 	logrustash "github.com/idtksrv/logrus-logstash-hook"
@@ -36,18 +37,28 @@ type LoggerParameter struct {
 }
 
 type Logger struct {
-	level         Level
-	logFileName   string
-	activeLog     bool
-	activeLogFile bool
-	fullPath      bool
-	logrus        *logrus.Logger
-	forceColor    bool //當輸出到stdout, 是否使用彩色
-	formatterType int
-	environment   string
-	service       string
-	elkEnable     bool
-	logstashEntry *logrus.Entry
+	level          Level
+	logFileName    string
+	activeLog      bool
+	activeLogFile  bool
+	fullPath       bool
+	logrus         *logrus.Logger
+	forceColor     bool //當輸出到stdout, 是否使用彩色
+	formatterType  int
+	environment    string
+	service        string
+	logstashEnable bool
+	logstashReady  bool
+	logstashEntry  *logrus.Entry
+	logstashChan   chan *logstashData
+	logstashCtx    context.Context
+	logstashCancel context.CancelFunc
+}
+
+type logstashData struct {
+	level  Level
+	fields logrus.Fields
+	args   []interface{}
 }
 
 //func newLogger(elkEnable bool, fileNamePrefix, level, address, env, service string) (*Logger, error) {
@@ -58,28 +69,37 @@ func newLogger(param *LoggerParameter) (*Logger, error) {
 	}
 
 	l := &Logger{
-		level:         0,
-		logFileName:   param.LogFileName,
-		activeLog:     true,
-		activeLogFile: true,
-		fullPath:      false,
-		logrus:        logrus.New(),
-		environment:   param.Environment,
-		service:       param.Service,
-		elkEnable:     param.ELKEnable,
+		level:          0,
+		logFileName:    param.LogFileName,
+		activeLog:      true,
+		activeLogFile:  true,
+		fullPath:       false,
+		logrus:         logrus.New(),
+		environment:    param.Environment,
+		service:        param.Service,
+		logstashEnable: param.ELKEnable,
+		logstashReady:  false,
 	}
-	l.logstashEntry=l.NewEntry()
+
 	l.level = l.GetLevel(param.Level)
 	l.SetFormatter(FormatterTypeText, true, false, nil)
 	l.logrus.SetReportCaller(false) //logrus內部的列印呼叫的func和檔案、行數，沒用
 
 	if param.ELKEnable {
+
+		l.logstashEntry = l.NewEntry()
+		l.logstashCtx, l.logstashCancel = context.WithCancel(context.Background())
+		l.logstashChan = make(chan *logstashData)
+
 		conn, err := gas.Dial("tcp", param.Address)
 		if err != nil {
 			l.logrus.Error("newLogger failed at gas.Dail", err)
 		} else {
 			l.logrus.Hooks.Add(logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{})))
+			l.logstashReady = true
 		}
+
+		go l.logstashWorker(l.logstashCtx, l.logstashChan)
 	}
 
 	return l, nil
@@ -106,6 +126,19 @@ func (l *Logger) Out(out io.Writer) {
 
 func (l *Logger) WithFieldsHook(entry *logrus.Entry, level Level, fields logrus.Fields, args ...interface{}) {
 
+	//if logstash is ready
+	if l.logstashReady {
+		//push into logstash queue
+		l.logstashChan <-
+			&logstashData{
+				level,
+				fields,
+				args,
+			}
+		return
+	}
+
+	//logstash is not ready, just log
 	//if level == LevelFatal {
 	//	entry.WithFields(fields).Fatal(args...)
 	//} else if level == LevelPanic {
@@ -121,21 +154,32 @@ func (l *Logger) WithFieldsHook(entry *logrus.Entry, level Level, fields logrus.
 	//} else {
 	//	entry.WithFields(fields).Trace(args...)
 	//}
+}
 
-	if level == LevelFatal {
-		l.logstashEntry.WithFields(fields).Fatal(args...)
-	} else if level == LevelPanic {
-		l.logstashEntry.WithFields(fields).Panic(args...)
-	} else if level == LevelError {
-		l.logstashEntry.WithFields(fields).Error(args...)
-	} else if level == LevelWarning {
-		l.logstashEntry.WithFields(fields).Warning(args...)
-	} else if level == LevelInfo {
-		l.logstashEntry.WithFields(fields).Info(args...)
-	} else if level == LevelDebug {
-		l.logstashEntry.WithFields(fields).Debug(args...)
-	} else {
-		l.logstashEntry.WithFields(fields).Trace(args...)
+func (l *Logger) logstashWorker(ctx context.Context, dataChan <-chan *logstashData) {
+	for {
+		select {
+		case <-ctx.Done():
+			//接收到取消訊號
+			//		logger.Println("任務", ctx.Value(key), ":任務停止...")
+			return
+		case data := <-dataChan:
+			if data.level == LevelFatal {
+				l.logstashEntry.WithFields(data.fields).Fatal(data.args...)
+			} else if data.level == LevelPanic {
+				l.logstashEntry.WithFields(data.fields).Panic(data.args...)
+			} else if data.level == LevelError {
+				l.logstashEntry.WithFields(data.fields).Error(data.args...)
+			} else if data.level == LevelWarning {
+				l.logstashEntry.WithFields(data.fields).Warning(data.args...)
+			} else if data.level == LevelInfo {
+				l.logstashEntry.WithFields(data.fields).Info(data.args...)
+			} else if data.level == LevelDebug {
+				l.logstashEntry.WithFields(data.fields).Debug(data.args...)
+			} else {
+				l.logstashEntry.WithFields(data.fields).Trace(data.args...)
+			}
+		}
 	}
 }
 
