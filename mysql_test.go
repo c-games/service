@@ -98,12 +98,13 @@ func TestORM(t *testing.T) {
 	}
 
 	//
-	mock.ExpectQuery("SELECT id,test FROM `ooo_table` WHERE id = \\? AND test > \\? ORDER BY test DESC LIMIT 10").
+	mock.ExpectQuery("SELECT id,test FROM `ooo_table` WHERE id = \\? AND test > \\? GROUP BY id, test ORDER BY test DESC LIMIT 10").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(10))
 
 	ret, err = mysql.ORM(OOO{}).Select([]string{"id", "test"}).
 		WhereAnd(WhereCond{Column: "id", Cond: "=", Value: 10}).
 		WhereAnd(WhereCond{Column: "test", Cond: ">", Value: 10}).
+		GroupBy([]string{"id", "test"}).
 		OrderBy("test", DESC).
 		Limit(10).
 		Rows()

@@ -471,6 +471,7 @@ type QueryContext struct {
 	dirs   DbOrderBy
 	limit  int
 	offset int
+	group  []string
 	args   []interface{}
 }
 
@@ -608,8 +609,8 @@ func (ctx *QueryContext) OrderBy(column string, dir OrderByDir) *QueryContext {
 	return ctx
 }
 
-func (ctx *QueryContext) GroupBy() *QueryContext {
-	panic("implement me")
+func (ctx *QueryContext) GroupBy(column []string) *QueryContext {
+	ctx.group = column
 	return ctx
 }
 
@@ -641,7 +642,7 @@ func (ctx *QueryContext) SQL() string {
 	limit := parseLimit(ctx.limit)
 	offset := parseOffset(ctx.offset)
 	var selects string
-	groupBy := "" // TODO
+	groupBy := parseGroupBy(ctx.group)
 
 	if ctx.selects == nil || len(ctx.selects) == 0 || ctx.selects[0] == "*" {
 		selects = "*"
@@ -1132,6 +1133,20 @@ func parseOrderBy(dirs DbOrderBy) string {
 		orderBy = orderBy[:len(orderBy)-2]
 	}
 	return orderBy
+}
+
+func parseGroupBy(columns []string) string {
+	var groupBy string
+	if columns == nil || len(columns) == 0 {
+		groupBy = ""
+	} else {
+		groupBy = "GROUP BY "
+		for _, column := range columns {
+			groupBy += fmt.Sprintf("%s, ", column)
+		}
+		groupBy = groupBy[:len(groupBy)-2]
+	}
+	return groupBy
 }
 
 func scan(rows *sql.Rows, columns []string, columnTypes []*sql.ColumnType, out reflect.Value) {
