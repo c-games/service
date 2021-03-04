@@ -716,13 +716,17 @@ func (ctx *QueryContext) Count() (int64, error) {
 	if where == "" {
 		where = "1"
 	}
+
+	groupBy := parseGroupBy(ctx.group)
+
 	selects := "count(*)"
 
-	sqlStr := fmt.Sprintf("SELECT %s FROM `%s` WHERE %s",
+	sqlStr := fmt.Sprintf("SELECT %s FROM `%s` WHERE %s %s",
 		selects,
 		ctx.tableName,
-		where)
-
+		where,
+		groupBy)
+	fmt.Println(sqlStr)
 	rows, err := ctx.ctx.db.mainDB.Query(sqlStr, ctx.args...)
 	if err != nil {
 		return 0, err
