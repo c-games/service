@@ -726,7 +726,6 @@ func (ctx *QueryContext) Count() (int64, error) {
 		ctx.tableName,
 		where,
 		groupBy)
-	fmt.Println(sqlStr)
 	rows, err := ctx.ctx.db.mainDB.Query(sqlStr, ctx.args...)
 	if err != nil {
 		return 0, err
