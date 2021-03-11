@@ -31,6 +31,10 @@ type MySQL struct {
 	readWriteSplitting bool
 }
 
+func (ms *MySQL) GetMainDB() *sql.DB {
+	return  ms.mainDB
+}
+
 //請看 mysql mysqlParameter
 type MysqlParameter struct {
 	DriverName         string
