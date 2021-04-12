@@ -228,6 +228,16 @@ func (rds *Redis) Expire (key string, expire time.Duration) bool {
 	return result
 }
 
+func (rds *Redis) Scan (cursor uint64, match string, count int64) ([]string, uint64, error) {
+	keys, newCursor, err := rds.client.Scan(cursor, match, count).Result()
+
+	if err != nil {
+		return []string{}, 0, err
+	}
+
+	return keys, newCursor, nil
+}
+
 func (rds *Redis) Delete (key ...string) (int64, error) {
 	numberOfKeyRemove, err := rds.client.Del(key...).Result()
 
