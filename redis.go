@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"github.com/go-redis/redis"
 	"strconv"
 	"time"
@@ -220,6 +221,46 @@ func (rds *Redis) HExistAndGetString (key, fields string) (string, bool, error) 
 	} else {
 		return "", false, nil
 	}
+}
+
+func (rds *Redis) LPush(key string, value ...interface{}) error {
+	err := rds.client.LPush(key, value...).Err()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) ([]string, error) {
+	listLength, err := rds.client.LLen(key).Result()
+	if err != nil {
+		return []string{}, errors.New("is not list")
+	}
+
+	if listLength == 0 {
+		return defaultValue, errors.New("key is not exist")
+	}
+
+	if start > (listLength - 1) {
+		return defaultValue, errors.New("index out of range")
+	}
+
+	if start >= 0 && stop >= 0 && start > stop {
+		return defaultValue, errors.New("illegal index")
+	} else if start < 0 && stop >= 0 {
+		return defaultValue, errors.New("illegal index")
+	} else if start < 0 && stop < 0 && start > stop {
+		return defaultValue, errors.New("illegal index")
+	}
+
+	total, err := rds.client.LRange(key, start, stop).Result()
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return total, nil
 }
 
 func (rds *Redis) Expire (key string, expire time.Duration) bool {

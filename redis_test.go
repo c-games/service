@@ -1083,10 +1083,10 @@ func TestRedis_HExistAndGetString(t *testing.T) {
 		fields string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
+		name    string
+		fields  fields
+		args    args
+		want    string
 		want1   bool
 		wantErr bool
 	}{
@@ -1097,8 +1097,8 @@ func TestRedis_HExistAndGetString(t *testing.T) {
 				key:    "key1",
 				fields: "field1",
 			},
-			want: "12.34",
-			want1: true,
+			want:    "12.34",
+			want1:   true,
 			wantErr: false,
 		},
 		{
@@ -1108,8 +1108,8 @@ func TestRedis_HExistAndGetString(t *testing.T) {
 				key:    "key1",
 				fields: "field2",
 			},
-			want: "",
-			want1: false,
+			want:    "",
+			want1:   false,
 			wantErr: false,
 		},
 	}
@@ -1128,6 +1128,139 @@ func TestRedis_HExistAndGetString(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("Redis.HExistAndGetString() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func TestRedis_LRange(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	_ = client.LPush("key1", "field1", 12.34)
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key          string
+		start        int64
+		stop         int64
+		defaultValue []string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{client: client},
+			args: args{
+				key:          "key1",
+				start:        0,
+				stop:         -1,
+				defaultValue: []string{},
+			},
+			want:    []string{"12.34", "field1"},
+			wantErr: false,
+		},
+		{
+			name:   "key doesn't exist",
+			fields: fields{client: client},
+			args: args{
+				key:          "key2",
+				start:        0,
+				stop:         -1,
+				defaultValue: []string{"key", "doesn't", "exist"},
+			},
+			want:    []string{"key", "doesn't", "exist"},
+			wantErr: true,
+		},
+		{
+			name:   "illegal index",
+			fields: fields{client: client},
+			args: args{
+				key:          "key1",
+				start:        20,
+				stop:         0,
+				defaultValue: []string{"illegal", "index"},
+			},
+			want:    []string{"illegal", "index"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.LRange(tt.args.key, tt.args.start, tt.args.stop, tt.args.defaultValue)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.LRange() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Redis.LRange() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_LPush(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	var value []interface{}
+	value = append(value, 1)
+	value = append(value, "value1")
+	value = append(value, 2)
+	value = append(value, "value2")
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key   string
+		value []interface{}
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name:   "success",
+			fields: fields{client: client},
+			args: args{
+				key:   "key1",
+				value: value,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			if err := rds.LPush(tt.args.key, tt.args.value...); (err != nil) != tt.wantErr {
+				t.Errorf("Redis.LPush() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
