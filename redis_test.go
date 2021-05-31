@@ -1265,3 +1265,56 @@ func TestRedis_LPush(t *testing.T) {
 		})
 	}
 }
+
+func TestRedis_IncrBy(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "success",
+			fields: fields{client:client},
+			args: args{
+				key:   "key1",
+			},
+			want:    1,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.IncrBy(tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.IncrBy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.IncrBy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
