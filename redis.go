@@ -213,20 +213,20 @@ func (rds *Redis) HMGetByFields(key string, fields ...string) (map[string]interf
 	}
 }
 
-func (rds *Redis) Exist (key string) int64 {
+func (rds *Redis) Exist(key string) int64 {
 	result, _ := rds.client.Exists(key).Result()
 
 	return result
 }
 
-func (rds *Redis) HExistAndGetString (key, fields string) (string, bool, error) {
+func (rds *Redis) HExistAndGetString(key, fields string) (string, bool, error) {
 	isExist, _ := rds.client.HExists(key, fields).Result()
 	if isExist {
 		result, err := rds.client.HGet(key, fields).Result()
 		if err != nil {
 			return "", false, err
 		} else {
-			return  result, true, nil
+			return result, true, nil
 		}
 	} else {
 		return "", false, nil
@@ -241,6 +241,36 @@ func (rds *Redis) LPush(key string, value ...interface{}) error {
 	}
 
 	return nil
+}
+
+func (rds *Redis) LPop(key, defaultValue string) (string, error) {
+	result, err := rds.client.LPop(key).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return result, nil
+}
+
+func (rds *Redis) RPush(key string, value ...interface{}) error {
+	err := rds.client.RPush(key, value...).Err()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rds *Redis) RPop(key, defaultValue string) (string, error) {
+	result, err := rds.client.RPop(key).Result()
+
+	if err != nil {
+		return defaultValue, err
+	}
+
+	return result, nil
 }
 
 func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) ([]string, error) {
@@ -273,13 +303,13 @@ func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) (
 	return total, nil
 }
 
-func (rds *Redis) Expire (key string, expire time.Duration) bool {
+func (rds *Redis) Expire(key string, expire time.Duration) bool {
 	result, _ := rds.client.Expire(key, expire).Result()
 
 	return result
 }
 
-func (rds *Redis) Scan (cursor uint64, match string, count int64) ([]string, uint64, error) {
+func (rds *Redis) Scan(cursor uint64, match string, count int64) ([]string, uint64, error) {
 	keys, newCursor, err := rds.client.Scan(cursor, match, count).Result()
 
 	if err != nil {
@@ -289,7 +319,7 @@ func (rds *Redis) Scan (cursor uint64, match string, count int64) ([]string, uin
 	return keys, newCursor, nil
 }
 
-func (rds *Redis) Delete (key ...string) (int64, error) {
+func (rds *Redis) Delete(key ...string) (int64, error) {
 	numberOfKeyRemove, err := rds.client.Del(key...).Result()
 
 	if err != nil {
