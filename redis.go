@@ -273,6 +273,15 @@ func (rds *Redis) RPop(key, defaultValue string) (string, error) {
 	return result, nil
 }
 
+func (rds *Redis) LLen(key string) (int64, error) {
+	counts, err := rds.client.LLen(key).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	return counts, nil
+}
+
 func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) ([]string, error) {
 	listLength, err := rds.client.LLen(key).Result()
 	if err != nil {
