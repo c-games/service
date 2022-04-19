@@ -187,6 +187,16 @@ func (rds *Redis) IncrBy(key string) (int64, error) {
 	return val, nil
 }
 
+func (rds *Redis) DecrBy(key string) (int64, error) {
+
+	val, err := rds.client.Decr(key).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	return val, nil
+}
+
 func (rds *Redis) HIncrBy(key, field string, incr int64) (int64, error) {
 
 	val, err := rds.client.HIncrBy(key, field, incr).Result()
