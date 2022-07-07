@@ -328,6 +328,15 @@ func (rds *Redis) Expire(key string, expire time.Duration) bool {
 	return result
 }
 
+func (rds *Redis) TTL(key string) (time.Duration, error) {
+	expire, err := rds.client.TTL(key).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	return expire, nil
+}
+
 func (rds *Redis) Scan(cursor uint64, match string, count int64) ([]string, uint64, error) {
 	keys, newCursor, err := rds.client.Scan(cursor, match, count).Result()
 

@@ -1292,10 +1292,10 @@ func TestRedis_IncrBy(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "success",
-			fields: fields{client:client},
+			name:   "success",
+			fields: fields{client: client},
 			args: args{
-				key:   "key1",
+				key: "key1",
 			},
 			want:    1,
 			wantErr: false,
@@ -1314,6 +1314,58 @@ func TestRedis_IncrBy(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("Redis.IncrBy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_TTL(t *testing.T) {
+
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    time.Duration
+		wantErr bool
+	}{
+		{
+			name:   "failed - expired, key not exist",
+			fields: fields{client: client},
+			args: args{
+				key: "key1",
+			},
+			want:    time.Duration(-2) * time.Second,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.TTL(tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("TTL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("TTL() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
