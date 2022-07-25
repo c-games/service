@@ -357,6 +357,23 @@ func (rds *Redis) Delete(key ...string) (int64, error) {
 	return numberOfKeyRemove, nil
 }
 
+func (rds *Redis) Publish(channel string, message interface{}) error {
+	_, err := rds.client.Publish(channel, message).Result()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rds *Redis) SubscribeChanel(channel string) <-chan *redis.Message {
+	subscriber := rds.client.Subscribe(channel)
+	ch := subscriber.Channel()
+
+	return ch
+}
+
 func (rds *Redis) GetClient() *redis.Client {
 	return rds.client
 }
