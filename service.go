@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-
 //Lottery is lottery server framework.
 type Service struct {
 	configure    *Configure
@@ -233,14 +232,16 @@ func (s *Service) enableRedis() (*Redis, error) {
 	conf := s.configure.Redis
 
 	params := &RedisParameter{
-		Network:      conf.Network,
-		Address:      conf.Address,
-		Password:     conf.Password,
-		DB:           conf.DB,
-		DialTimeout:  time.Second * time.Duration(conf.DialTimeoutSecond),
-		ReadTimeout:  time.Second * time.Duration(conf.ReadTimeoutSecond),
-		WriteTimeout: time.Second * time.Duration(conf.WriteTimeoutSecond),
-		PoolSize:     conf.PoolSize,
+		Network:          conf.Network,
+		Address:          conf.Address,
+		Password:         conf.Password,
+		DB:               conf.DB,
+		DialTimeout:      time.Second * time.Duration(conf.DialTimeoutSecond),
+		ReadTimeout:      time.Second * time.Duration(conf.ReadTimeoutSecond),
+		WriteTimeout:     time.Second * time.Duration(conf.WriteTimeoutSecond),
+		PoolSize:         conf.PoolSize,
+		SubscribeChannel: conf.SubscribeChannel,
+		PublishChannel:   conf.PublishChannel,
 	}
 
 	return NewRedis(params)

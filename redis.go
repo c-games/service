@@ -11,14 +11,16 @@ type Redis struct {
 	client *redis.Client
 }
 type RedisParameter struct {
-	Network      string
-	Address      string
-	Password     string
-	DB           int
-	DialTimeout  time.Duration
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	PoolSize     int
+	Network          string
+	Address          string
+	Password         string
+	DB               int
+	DialTimeout      time.Duration
+	ReadTimeout      time.Duration
+	WriteTimeout     time.Duration
+	PoolSize         int
+	SubscribeChannel string
+	PublishChannel   string
 }
 
 func NewRedis(param *RedisParameter) (*Redis, error) {

@@ -125,6 +125,8 @@ type redisConfig struct {
 	ReadTimeoutSecond  int
 	WriteTimeoutSecond int
 	PoolSize           int
+	SubscribeChannel   string
+	PublishChannel     string
 }
 type websocketConfig struct {
 	Enable          bool
