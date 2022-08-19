@@ -24,7 +24,7 @@ const (
 	nodeShift       = StepBits
 )
 
-type idGenerator struct {
+type IdGenerator struct {
 	gen *snowflake.Node
 }
 
@@ -34,7 +34,7 @@ type idGenerator struct {
 //+--------------------------------------------------------------------------+
 //Using the default settings, this allows for 4096 unique IDs
 // to be generated every millisecond, per Node ID.
-func newIDGenerator(nodeNum int64) (*idGenerator, error) {
+func newIDGenerator(nodeNum int64) (*IdGenerator, error) {
 
 	if nodeNum < 0 || nodeNum > 1023 {
 		return nil, errors.New("node out of range")
@@ -45,14 +45,14 @@ func newIDGenerator(nodeNum int64) (*idGenerator, error) {
 		return nil, err
 	}
 
-	g := &idGenerator{
+	g := &IdGenerator{
 		gen: node,
 	}
 
 	return g, nil
 }
 
-func (g *idGenerator) GenerateInt64ID() int64 {
+func (g *IdGenerator) GenerateInt64ID() int64 {
 
 	return g.gen.Generate().Int64()
 }

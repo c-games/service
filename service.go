@@ -17,7 +17,7 @@ type Service struct {
 	mq           *MQ
 	http         *HTTPServer
 	redis        *Redis
-	idGenerators map[int64]*idGenerator
+	idGenerators map[int64]*IdGenerator
 	done         chan int
 }
 
@@ -92,10 +92,10 @@ func (s *Service) enable() error {
 
 	idGen, err := newIDGenerator(0)
 	if err != nil {
-		return fmt.Errorf("idGenerator error %s", err.Error())
+		return fmt.Errorf("IdGenerator error %s", err.Error())
 	}
 
-	s.idGenerators = make(map[int64]*idGenerator)
+	s.idGenerators = make(map[int64]*IdGenerator)
 	s.idGenerators[0] = idGen
 
 	//if mySQL enable
@@ -283,7 +283,7 @@ func (s *Service) GetRedis() (*Redis, error) {
 	return nil, errors.New("redis is not enabled")
 }
 
-func (s *Service) GetIDGenerator(nodeNum int64) (*idGenerator, error) {
+func (s *Service) GetIDGenerator(nodeNum int64) (*IdGenerator, error) {
 	if nodeNum < 0 || nodeNum > 1023 {
 		return nil, fmt.Errorf("nodeNum out of range want 0-1023 got %d", nodeNum)
 	}
@@ -295,7 +295,7 @@ func (s *Service) GetIDGenerator(nodeNum int64) (*idGenerator, error) {
 	g, err := newIDGenerator(nodeNum)
 
 	if err != nil {
-		return nil, fmt.Errorf("get idGenerator error nodeNum %d", nodeNum)
+		return nil, fmt.Errorf("get IdGenerator error nodeNum %d", nodeNum)
 	}
 
 	s.idGenerators[nodeNum] = g
