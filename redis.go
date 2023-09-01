@@ -179,6 +179,16 @@ func (rds *Redis) HMGet(key string, fields []string) (map[string]interface{}, er
 	return m, nil
 }
 
+func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
+	m := make(map[string]string)
+	m, err := rds.client.HGetAll(key).Result()
+	if err != nil {
+		return m, err
+	}
+
+	return m, nil
+}
+
 func (rds *Redis) IncrBy(key string) (int64, error) {
 
 	val, err := rds.client.Incr(key).Result()

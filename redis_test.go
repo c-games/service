@@ -1370,3 +1370,82 @@ func TestRedis_TTL(t *testing.T) {
 		})
 	}
 }
+
+func TestRedis_HMGetAll(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	param := &RedisParameter{
+		Network:      "tcp",
+		Address:      s.Addr(),
+		Password:     "",
+		DB:           0,
+		DialTimeout:  time.Duration(time.Second * 5),
+		ReadTimeout:  time.Duration(time.Second * 5),
+		WriteTimeout: time.Duration(time.Second * 5),
+		PoolSize:     10,
+	}
+	rds, err := NewRedis(param)
+
+	if err != nil {
+		t.Errorf("NewRedis error = %v", err)
+		return
+	}
+
+	key := "key"
+	data := map[string]interface{}{
+		"k1": 1,
+		"k2": 2,
+	}
+
+	result := map[string]string{
+		"k1": "1",
+		"k2": "2",
+	}
+
+	rds.HMSet(key, data)
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[string]string
+		wantErr bool
+	}{
+		{
+			name:    "success",
+			fields:  fields{client: client},
+			args:    args{key: key},
+			want:    result,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.HMGetAll(tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.HMGetAll() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Redis.HMGetAll() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
