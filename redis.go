@@ -221,6 +221,25 @@ func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 	return m, nil
 }
 
+func (rds *Redis) HGetAllScan(key string, destination any) error {
+	err := rds.client.HGetAll(context.TODO(), key).Scan(destination)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rds *Redis) HMGetScan(key string, field []string, destination any) error {
+	err := rds.client.HMGet(context.TODO(), key, field...).Scan(destination)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (rds *Redis) GeoAdd(key string, geoLocation ...*GeoLocation) (int64, error) {
 
 	var redisGeoLocation []*redis.GeoLocation
