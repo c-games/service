@@ -25,6 +25,36 @@ type RedisParameter struct {
 	PublishChannel   string
 }
 
+type GeoLocation struct {
+	Name      string
+	Longitude float64
+	Latitude  float64
+}
+
+type GeoSearchQuery struct {
+	Member string
+
+	// Latitude and Longitude when using FromLonLat option.
+	Longitude float64
+	Latitude  float64
+
+	// Distance and unit when using ByRadius option.
+	// Can use m, km, ft, or mi. Default is km.
+	Radius     float64
+	RadiusUnit string
+
+	// Height, width and unit when using ByBox option.
+	// Can be m, km, ft, or mi. Default is km.
+	BoxWidth  float64
+	BoxHeight float64
+	BoxUnit   string
+
+	// Can be ASC or DESC. Default is no sort order.
+	Sort     string
+	Count    int
+	CountAny bool
+}
+
 func NewRedis(param *RedisParameter) (*Redis, error) {
 
 	client := redis.NewClient(&redis.Options{
@@ -189,6 +219,47 @@ func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 	}
 
 	return m, nil
+}
+
+func (rds *Redis) GeoAdd(key string, geoLocation ...*GeoLocation) (int64, error) {
+
+	var redisGeoLocation []*redis.GeoLocation
+	for _, geo := range geoLocation {
+		redisGeoLocation = append(redisGeoLocation, &redis.GeoLocation{
+			Name:      geo.Name,
+			Longitude: geo.Longitude,
+			Latitude:  geo.Latitude,
+		})
+	}
+
+	effectedRaws, err := rds.client.GeoAdd(context.TODO(), key, redisGeoLocation...).Result()
+	if err != nil {
+		return effectedRaws, err
+	}
+
+	return effectedRaws, nil
+}
+
+func (rds *Redis) GeoSearch(key string, q *GeoSearchQuery) ([]string, error) {
+	result, err := rds.client.GeoSearch(context.TODO(), key, &redis.GeoSearchQuery{
+		Member:     q.Member,
+		Longitude:  q.Longitude,
+		Latitude:   q.Latitude,
+		Radius:     q.Radius,
+		RadiusUnit: q.RadiusUnit,
+		BoxWidth:   q.BoxWidth,
+		BoxHeight:  q.BoxHeight,
+		BoxUnit:    q.BoxUnit,
+		Sort:       q.Sort,
+		Count:      q.Count,
+		CountAny:   q.CountAny,
+	}).Result()
+
+	if err != nil {
+		return []string{}, err
+	}
+
+	return result, nil
 }
 
 func (rds *Redis) IncrBy(key string) (int64, error) {

@@ -1451,3 +1451,157 @@ func TestRedis_HMGetAll(t *testing.T) {
 		})
 	}
 }
+
+func TestRedis_GeoAdd(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key         string
+		geoLocation []*GeoLocation
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "success",
+			fields: fields{
+				client: client,
+			},
+			args: args{
+				key: "location",
+				geoLocation: []*GeoLocation{
+					{
+						Name:      "location1",
+						Longitude: 121.475,
+						Latitude:  31.223,
+					},
+					{
+						Name:      "location2",
+						Longitude: 121.476,
+						Latitude:  31.224,
+					},
+				},
+			},
+			want:    2,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.GeoAdd(tt.args.key, tt.args.geoLocation...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.GeoAdd() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.GeoAdd() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+//NOTE: miniredis doesn't support geo search
+func TestRedis_GeoSearch(t *testing.T) {
+	// s, err := miniredis.Run()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer s.Close()
+
+	// client := redis.NewClient(&redis.Options{
+	// 	Addr: s.Addr(),
+	// })
+
+	// location := []*redis.GeoLocation{
+	// 	{
+	// 		Name:      "location1",
+	// 		Longitude: -122.27652,
+	// 		Latitude:  37.805186,
+	// 	},
+	// 	{
+	// 		Name:      "location2",
+	// 		Longitude: -122.2674626,
+	// 		Latitude:  37.8062344,
+	// 	},
+	// 	{
+	// 		Name:      "you can't find me",
+	// 		Longitude: 128.2674626,
+	// 		Latitude:  50.8062344,
+	// 	},
+	// }
+
+	// _ = client.GeoAdd(context.TODO(), "location", location...)
+
+	// type fields struct {
+	// 	client *redis.Client
+	// }
+	// type args struct {
+	// 	key string
+	// 	q   *GeoSearchQuery
+	// }
+	// tests := []struct {
+	// 	name    string
+	// 	fields  fields
+	// 	args    args
+	// 	want    []string
+	// 	wantErr bool
+	// }{
+	// 	{
+	// 		name: "success",
+	// 		fields: fields{
+	// 			client: client,
+	// 		},
+	// 		args: args{
+	// 			key: "location",
+	// 			q: &GeoSearchQuery{
+	// 				Member:     "",
+	// 				Longitude:  -122.2612767,
+	// 				Latitude:   37.7936847,
+	// 				Radius:     5,
+	// 				RadiusUnit: "km",
+	// 				BoxWidth:   0.0,
+	// 				BoxHeight:  0.0,
+	// 				BoxUnit:    "",
+	// 				Sort:       "",
+	// 				Count:      0,
+	// 				CountAny:   false,
+	// 			},
+	// 		},
+	// 		want:    []string{"location1", "location2"},
+	// 		wantErr: false,
+	// 	},
+	// }
+	// for _, tt := range tests {
+	// 	t.Run(tt.name, func(t *testing.T) {
+	// 		rds := &Redis{
+	// 			client: tt.fields.client,
+	// 		}
+	// 		got, err := rds.GeoSearch(tt.args.key, tt.args.q)
+	// 		if (err != nil) != tt.wantErr {
+	// 			t.Errorf("Redis.GeoSearch() error = %v, wantErr %v", err, tt.wantErr)
+	// 			return
+	// 		}
+	// 		if !reflect.DeepEqual(got, tt.want) {
+	// 			t.Errorf("Redis.GeoSearch() = %v, want %v", got, tt.want)
+	// 		}
+	// 	})
+	// }
+}
