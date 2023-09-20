@@ -221,6 +221,18 @@ func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 	return m, nil
 }
 
+//直接把 redis hashes data 的資料塞到 struct，struct tags 要用 redis:"key_name"
+//
+// example:
+//
+// type Space struct {
+// 	ID         int64  `redis:"id"`
+// 	Name       string `redis:"name"`
+// 	Type       int    `redis:"type"`
+// }
+//
+// var space Space
+// err := HGetAllScan("space:1", &space)
 func (rds *Redis) HGetAllScan(key string, destination any) error {
 	err := rds.client.HGetAll(context.TODO(), key).Scan(destination)
 	if err != nil {
@@ -230,6 +242,18 @@ func (rds *Redis) HGetAllScan(key string, destination any) error {
 	return nil
 }
 
+//直接把 redis hashes 指定 field 的資料塞到 struct，struct tags 要用 redis:"key_name"
+//
+// example:
+//
+// type Space struct {
+// 	ID         int64  `redis:"id"`
+// 	Name       string `redis:"name"`
+// 	Type       int    `redis:"type"`
+// }
+//
+//var space Space
+// err := HMGetScan("space:1", []string{"id", "name"}, &space)
 func (rds *Redis) HMGetScan(key string, field []string, destination any) error {
 	err := rds.client.HMGet(context.TODO(), key, field...).Scan(destination)
 
