@@ -1,12 +1,13 @@
 package service
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 func TestRedis_Set(t *testing.T) {
@@ -95,7 +96,7 @@ func TestRedis_GetSting(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("test", "test value", 0)
+	_ = client.Set(context.TODO(), "test", "test value", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -152,7 +153,7 @@ func TestRedis_GetInt(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("test", "123", 0)
+	_ = client.Set(context.TODO(), "test", "123", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -209,7 +210,7 @@ func TestRedis_GetInt64(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("test", "12345678910", 0)
+	_ = client.Set(context.TODO(), "test", "12345678910", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -266,7 +267,7 @@ func TestRedis_GetFloat64(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("test", "12345678910", 0)
+	_ = client.Set(context.TODO(), "test", "12345678910", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -479,7 +480,7 @@ func TestRedis_HExist_HGet(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 
-			fieldExist, err := rds.GetClient().HExists(tt.args.key, tt.args.fields).Result()
+			fieldExist, err := rds.GetClient().HExists(context.TODO(), tt.args.key, tt.args.fields).Result()
 			if err != nil {
 				t.Fatalf("rds.GetClient().HExists() error = %v", err)
 			}
@@ -489,7 +490,7 @@ func TestRedis_HExist_HGet(t *testing.T) {
 			}
 
 			if fieldExist {
-				got, err := rds.GetClient().HGet(tt.args.key, tt.args.fields).Result()
+				got, err := rds.GetClient().HGet(context.TODO(), tt.args.key, tt.args.fields).Result()
 
 				if (err != nil) != tt.wantErr {
 					t.Errorf("rds.GetClient().HGet() error = %v, wantErr %v", err, tt.wantErr)
@@ -523,31 +524,31 @@ func TestRedis_Expire(t *testing.T) {
 
 	//set key
 	_ = rds.Set(key, 1)
-	rds.client.Expire(key, time.Duration(time.Second*10))
+	rds.client.Expire(context.TODO(), key, time.Duration(time.Second*10))
 
-	str, _ := rds.client.Get(key).Result()
+	str, _ := rds.client.Get(context.TODO(), key).Result()
 
 	t.Logf("redis set variable be transfer to string %s", reflect.TypeOf(str))
 
 	//ttl
 	//會被set, getset 清除
-	du, _ := rds.client.TTL(key).Result()
+	du, _ := rds.client.TTL(context.TODO(), key).Result()
 	if du.Seconds() < 0 {
 		t.Logf("redis key ttl (time to live) %f", du.Seconds())
 	}
 
 	//persist
 	//ttl 會變成未設置，回 -1
-	rds.client.Persist(key)
-	du, _ = rds.client.TTL(key).Result()
+	rds.client.Persist(context.TODO(), key)
+	du, _ = rds.client.TTL(context.TODO(), key).Result()
 	if du.Seconds() != -1 {
 		t.Errorf("redis key after persist ttl (time to live) %f", du.Seconds())
 	}
 
-	bo, _ := rds.client.PExpire(key, time.Duration(time.Millisecond*1)).Result()
+	bo, _ := rds.client.PExpire(context.TODO(), key, time.Duration(time.Millisecond*1)).Result()
 	t.Logf("PExpire 1 millisecond %v", bo)
 
-	k, err := rds.client.Get(key).Result()
+	k, err := rds.client.Get(context.TODO(), key).Result()
 	t.Logf("key %s", k)
 }
 
@@ -596,7 +597,7 @@ func TestRedis_Expire2(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("key1", "123", 0)
+	_ = client.Set(context.TODO(), "key1", "123", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -653,7 +654,7 @@ func TestRedis_Exist(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("key1", "123", 0)
+	_ = client.Set(context.TODO(), "key1", "123", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -711,9 +712,10 @@ func TestRedis_Delete(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.Set("key1", "123", 0)
-	_ = client.Set("key2", "123", 0)
-	_ = client.Set("key3", "123", 0)
+	ctx := context.Background()
+	_ = client.Set(ctx, "key1", "123", 0)
+	_ = client.Set(ctx, "key2", "123", 0)
+	_ = client.Set(ctx, "key3", "123", 0)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -772,7 +774,7 @@ func TestRedis_HIncrBy(t *testing.T) {
 		Addr: s.Addr(),
 	})
 
-	_ = client.HSet("key1", "node", 1)
+	_ = client.HSet(context.TODO(), "key1", "node", 1)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -802,7 +804,7 @@ func TestRedis_HGetSting(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 	})
-	_ = client.HSet("key1", "field1", "string")
+	_ = client.HSet(context.TODO(), "key1", "field1", "string")
 
 	type fields struct {
 		client *redis.Client
@@ -870,7 +872,7 @@ func TestRedis_HGetInt(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 	})
-	_ = client.HSet("key1", "field1", 1)
+	_ = client.HSet(context.TODO(), "key1", "field1", 1)
 
 	type fields struct {
 		client *redis.Client
@@ -938,7 +940,7 @@ func TestRedis_HGetInt64(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 	})
-	_ = client.HSet("key1", "field1", 12345678910)
+	_ = client.HSet(context.TODO(), "key1", "field1", 12345678910)
 
 	type fields struct {
 		client *redis.Client
@@ -1006,7 +1008,7 @@ func TestRedis_HGetFloat64(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 	})
-	_ = client.HSet("key1", "field1", 12.34)
+	_ = client.HSet(context.TODO(), "key1", "field1", 12.34)
 
 	type fields struct {
 		client *redis.Client
@@ -1073,7 +1075,7 @@ func TestRedis_HExistAndGetString(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 	})
-	_ = client.HSet("key1", "field1", 12.34)
+	_ = client.HSet(context.TODO(), "key1", "field1", 12.34)
 
 	type fields struct {
 		client *redis.Client
@@ -1143,7 +1145,7 @@ func TestRedis_LRange(t *testing.T) {
 	client := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 	})
-	_ = client.LPush("key1", "field1", 12.34)
+	_ = client.LPush(context.TODO(), "key1", "field1", 12.34)
 	type fields struct {
 		client *redis.Client
 	}
@@ -1448,4 +1450,158 @@ func TestRedis_HMGetAll(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRedis_GeoAdd(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key         string
+		geoLocation []*GeoLocation
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "success",
+			fields: fields{
+				client: client,
+			},
+			args: args{
+				key: "location",
+				geoLocation: []*GeoLocation{
+					{
+						Name:      "location1",
+						Longitude: 121.475,
+						Latitude:  31.223,
+					},
+					{
+						Name:      "location2",
+						Longitude: 121.476,
+						Latitude:  31.224,
+					},
+				},
+			},
+			want:    2,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.GeoAdd(tt.args.key, tt.args.geoLocation...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.GeoAdd() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.GeoAdd() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+//NOTE: miniredis doesn't support geo search
+func TestRedis_GeoSearch(t *testing.T) {
+	// s, err := miniredis.Run()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer s.Close()
+
+	// client := redis.NewClient(&redis.Options{
+	// 	Addr: s.Addr(),
+	// })
+
+	// location := []*redis.GeoLocation{
+	// 	{
+	// 		Name:      "location1",
+	// 		Longitude: -122.27652,
+	// 		Latitude:  37.805186,
+	// 	},
+	// 	{
+	// 		Name:      "location2",
+	// 		Longitude: -122.2674626,
+	// 		Latitude:  37.8062344,
+	// 	},
+	// 	{
+	// 		Name:      "you can't find me",
+	// 		Longitude: 128.2674626,
+	// 		Latitude:  50.8062344,
+	// 	},
+	// }
+
+	// _ = client.GeoAdd(context.TODO(), "location", location...)
+
+	// type fields struct {
+	// 	client *redis.Client
+	// }
+	// type args struct {
+	// 	key string
+	// 	q   *GeoSearchQuery
+	// }
+	// tests := []struct {
+	// 	name    string
+	// 	fields  fields
+	// 	args    args
+	// 	want    []string
+	// 	wantErr bool
+	// }{
+	// 	{
+	// 		name: "success",
+	// 		fields: fields{
+	// 			client: client,
+	// 		},
+	// 		args: args{
+	// 			key: "location",
+	// 			q: &GeoSearchQuery{
+	// 				Member:     "",
+	// 				Longitude:  -122.2612767,
+	// 				Latitude:   37.7936847,
+	// 				Radius:     5,
+	// 				RadiusUnit: "km",
+	// 				BoxWidth:   0.0,
+	// 				BoxHeight:  0.0,
+	// 				BoxUnit:    "",
+	// 				Sort:       "",
+	// 				Count:      0,
+	// 				CountAny:   false,
+	// 			},
+	// 		},
+	// 		want:    []string{"location1", "location2"},
+	// 		wantErr: false,
+	// 	},
+	// }
+	// for _, tt := range tests {
+	// 	t.Run(tt.name, func(t *testing.T) {
+	// 		rds := &Redis{
+	// 			client: tt.fields.client,
+	// 		}
+	// 		got, err := rds.GeoSearch(tt.args.key, tt.args.q)
+	// 		if (err != nil) != tt.wantErr {
+	// 			t.Errorf("Redis.GeoSearch() error = %v, wantErr %v", err, tt.wantErr)
+	// 			return
+	// 		}
+	// 		if !reflect.DeepEqual(got, tt.want) {
+	// 			t.Errorf("Redis.GeoSearch() = %v, want %v", got, tt.want)
+	// 		}
+	// 	})
+	// }
 }

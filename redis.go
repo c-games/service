@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"errors"
-	"github.com/go-redis/redis"
 	"strconv"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Redis struct {
@@ -23,6 +25,36 @@ type RedisParameter struct {
 	PublishChannel   string
 }
 
+type GeoLocation struct {
+	Name      string
+	Longitude float64
+	Latitude  float64
+}
+
+type GeoSearchQuery struct {
+	Member string
+
+	// Latitude and Longitude when using FromLonLat option.
+	Longitude float64
+	Latitude  float64
+
+	// Distance and unit when using ByRadius option.
+	// Can use m, km, ft, or mi. Default is km.
+	Radius     float64
+	RadiusUnit string
+
+	// Height, width and unit when using ByBox option.
+	// Can be m, km, ft, or mi. Default is km.
+	BoxWidth  float64
+	BoxHeight float64
+	BoxUnit   string
+
+	// Can be ASC or DESC. Default is no sort order.
+	Sort     string
+	Count    int
+	CountAny bool
+}
+
 func NewRedis(param *RedisParameter) (*Redis, error) {
 
 	client := redis.NewClient(&redis.Options{
@@ -36,14 +68,14 @@ func NewRedis(param *RedisParameter) (*Redis, error) {
 		PoolSize:     param.PoolSize,
 	})
 
-	_, err := client.Ping().Result()
+	_, err := client.Ping(context.TODO()).Result()
 
 	return &Redis{client: client}, err
 
 }
 
 func (rds *Redis) Set(key string, value interface{}) error {
-	err := rds.client.Set(key, value, 0).Err()
+	err := rds.client.Set(context.TODO(), key, value, 0).Err()
 
 	if err != nil {
 		return err
@@ -53,7 +85,7 @@ func (rds *Redis) Set(key string, value interface{}) error {
 }
 
 func (rds *Redis) GetSting(key string, defaultValue string) (string, error) {
-	value, err := rds.client.Get(key).Result()
+	value, err := rds.client.Get(context.TODO(), key).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -63,7 +95,7 @@ func (rds *Redis) GetSting(key string, defaultValue string) (string, error) {
 }
 
 func (rds *Redis) GetInt(key string, defaultValue int) (int, error) {
-	value, err := rds.client.Get(key).Result()
+	value, err := rds.client.Get(context.TODO(), key).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -78,7 +110,7 @@ func (rds *Redis) GetInt(key string, defaultValue int) (int, error) {
 }
 
 func (rds *Redis) GetInt64(key string, defaultValue int64) (int64, error) {
-	value, err := rds.client.Get(key).Result()
+	value, err := rds.client.Get(context.TODO(), key).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -93,7 +125,7 @@ func (rds *Redis) GetInt64(key string, defaultValue int64) (int64, error) {
 }
 
 func (rds *Redis) GetFloat64(key string, defaultValue float64) (float64, error) {
-	value, err := rds.client.Get(key).Result()
+	value, err := rds.client.Get(context.TODO(), key).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -108,7 +140,7 @@ func (rds *Redis) GetFloat64(key string, defaultValue float64) (float64, error) 
 }
 
 func (rds *Redis) HGetSting(key, field string, defaultValue string) (string, error) {
-	value, err := rds.client.HGet(key, field).Result()
+	value, err := rds.client.HGet(context.TODO(), key, field).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -118,7 +150,7 @@ func (rds *Redis) HGetSting(key, field string, defaultValue string) (string, err
 }
 
 func (rds *Redis) HGetInt(key, field string, defaultValue int) (int, error) {
-	value, err := rds.client.HGet(key, field).Result()
+	value, err := rds.client.HGet(context.TODO(), key, field).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -133,7 +165,7 @@ func (rds *Redis) HGetInt(key, field string, defaultValue int) (int, error) {
 }
 
 func (rds *Redis) HGetInt64(key, field string, defaultValue int64) (int64, error) {
-	value, err := rds.client.HGet(key, field).Result()
+	value, err := rds.client.HGet(context.TODO(), key, field).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -148,7 +180,7 @@ func (rds *Redis) HGetInt64(key, field string, defaultValue int64) (int64, error
 }
 
 func (rds *Redis) HGetFloat64(key, field string, defaultValue float64) (float64, error) {
-	value, err := rds.client.HGet(key, field).Result()
+	value, err := rds.client.HGet(context.TODO(), key, field).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -163,7 +195,7 @@ func (rds *Redis) HGetFloat64(key, field string, defaultValue float64) (float64,
 }
 
 func (rds *Redis) HMSet(key string, data map[string]interface{}) {
-	rds.client.HMSet(key, data)
+	rds.client.HMSet(context.TODO(), key, data)
 }
 
 func (rds *Redis) HMGet(key string, fields []string) (map[string]interface{}, error) {
@@ -171,7 +203,7 @@ func (rds *Redis) HMGet(key string, fields []string) (map[string]interface{}, er
 	m := make(map[string]interface{})
 
 	for _, f := range fields {
-		if r, err := rds.client.HMGet(key, f).Result(); err == nil {
+		if r, err := rds.client.HMGet(context.TODO(), key, f).Result(); err == nil {
 			m[f] = r[0]
 		}
 	}
@@ -181,7 +213,7 @@ func (rds *Redis) HMGet(key string, fields []string) (map[string]interface{}, er
 
 func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 	m := make(map[string]string)
-	m, err := rds.client.HGetAll(key).Result()
+	m, err := rds.client.HGetAll(context.TODO(), key).Result()
 	if err != nil {
 		return m, err
 	}
@@ -189,9 +221,93 @@ func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 	return m, nil
 }
 
+//直接把 redis hashes data 的資料塞到 struct，struct tags 要用 redis:"key_name"
+//
+// example:
+//
+// type Space struct {
+// 	ID         int64  `redis:"id"`
+// 	Name       string `redis:"name"`
+// 	Type       int    `redis:"type"`
+// }
+//
+// var space Space
+// err := HGetAllScan("space:1", &space)
+func (rds *Redis) HGetAllScan(key string, destination any) error {
+	err := rds.client.HGetAll(context.TODO(), key).Scan(destination)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//直接把 redis hashes 指定 field 的資料塞到 struct，struct tags 要用 redis:"key_name"
+//
+// example:
+//
+// type Space struct {
+// 	ID         int64  `redis:"id"`
+// 	Name       string `redis:"name"`
+// 	Type       int    `redis:"type"`
+// }
+//
+//var space Space
+// err := HMGetScan("space:1", []string{"id", "name"}, &space)
+func (rds *Redis) HMGetScan(key string, field []string, destination any) error {
+	err := rds.client.HMGet(context.TODO(), key, field...).Scan(destination)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rds *Redis) GeoAdd(key string, geoLocation ...*GeoLocation) (int64, error) {
+
+	var redisGeoLocation []*redis.GeoLocation
+	for _, geo := range geoLocation {
+		redisGeoLocation = append(redisGeoLocation, &redis.GeoLocation{
+			Name:      geo.Name,
+			Longitude: geo.Longitude,
+			Latitude:  geo.Latitude,
+		})
+	}
+
+	effectedRaws, err := rds.client.GeoAdd(context.TODO(), key, redisGeoLocation...).Result()
+	if err != nil {
+		return effectedRaws, err
+	}
+
+	return effectedRaws, nil
+}
+
+func (rds *Redis) GeoSearch(key string, q *GeoSearchQuery) ([]string, error) {
+	result, err := rds.client.GeoSearch(context.TODO(), key, &redis.GeoSearchQuery{
+		Member:     q.Member,
+		Longitude:  q.Longitude,
+		Latitude:   q.Latitude,
+		Radius:     q.Radius,
+		RadiusUnit: q.RadiusUnit,
+		BoxWidth:   q.BoxWidth,
+		BoxHeight:  q.BoxHeight,
+		BoxUnit:    q.BoxUnit,
+		Sort:       q.Sort,
+		Count:      q.Count,
+		CountAny:   q.CountAny,
+	}).Result()
+
+	if err != nil {
+		return []string{}, err
+	}
+
+	return result, nil
+}
+
 func (rds *Redis) IncrBy(key string) (int64, error) {
 
-	val, err := rds.client.Incr(key).Result()
+	val, err := rds.client.Incr(context.TODO(), key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -201,7 +317,7 @@ func (rds *Redis) IncrBy(key string) (int64, error) {
 
 func (rds *Redis) DecrBy(key string) (int64, error) {
 
-	val, err := rds.client.Decr(key).Result()
+	val, err := rds.client.Decr(context.TODO(), key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -211,7 +327,7 @@ func (rds *Redis) DecrBy(key string) (int64, error) {
 
 func (rds *Redis) HIncrBy(key, field string, incr int64) (int64, error) {
 
-	val, err := rds.client.HIncrBy(key, field, incr).Result()
+	val, err := rds.client.HIncrBy(context.TODO(), key, field, incr).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -221,7 +337,7 @@ func (rds *Redis) HIncrBy(key, field string, incr int64) (int64, error) {
 
 func (rds *Redis) HMGetByFields(key string, fields ...string) (map[string]interface{}, error) {
 
-	if result, err := rds.client.HMGet(key, fields...).Result(); err != nil {
+	if result, err := rds.client.HMGet(context.TODO(), key, fields...).Result(); err != nil {
 		return nil, err
 
 	} else {
@@ -236,15 +352,15 @@ func (rds *Redis) HMGetByFields(key string, fields ...string) (map[string]interf
 }
 
 func (rds *Redis) Exist(key string) int64 {
-	result, _ := rds.client.Exists(key).Result()
+	result, _ := rds.client.Exists(context.TODO(), key).Result()
 
 	return result
 }
 
 func (rds *Redis) HExistAndGetString(key, fields string) (string, bool, error) {
-	isExist, _ := rds.client.HExists(key, fields).Result()
+	isExist, _ := rds.client.HExists(context.TODO(), key, fields).Result()
 	if isExist {
-		result, err := rds.client.HGet(key, fields).Result()
+		result, err := rds.client.HGet(context.TODO(), key, fields).Result()
 		if err != nil {
 			return "", false, err
 		} else {
@@ -256,7 +372,7 @@ func (rds *Redis) HExistAndGetString(key, fields string) (string, bool, error) {
 }
 
 func (rds *Redis) LPush(key string, value ...interface{}) error {
-	err := rds.client.LPush(key, value...).Err()
+	err := rds.client.LPush(context.TODO(), key, value...).Err()
 
 	if err != nil {
 		return err
@@ -266,7 +382,7 @@ func (rds *Redis) LPush(key string, value ...interface{}) error {
 }
 
 func (rds *Redis) LPop(key, defaultValue string) (string, error) {
-	result, err := rds.client.LPop(key).Result()
+	result, err := rds.client.LPop(context.TODO(), key).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -276,7 +392,7 @@ func (rds *Redis) LPop(key, defaultValue string) (string, error) {
 }
 
 func (rds *Redis) RPush(key string, value ...interface{}) error {
-	err := rds.client.RPush(key, value...).Err()
+	err := rds.client.RPush(context.TODO(), key, value...).Err()
 
 	if err != nil {
 		return err
@@ -286,7 +402,7 @@ func (rds *Redis) RPush(key string, value ...interface{}) error {
 }
 
 func (rds *Redis) RPop(key, defaultValue string) (string, error) {
-	result, err := rds.client.RPop(key).Result()
+	result, err := rds.client.RPop(context.TODO(), key).Result()
 
 	if err != nil {
 		return defaultValue, err
@@ -296,7 +412,7 @@ func (rds *Redis) RPop(key, defaultValue string) (string, error) {
 }
 
 func (rds *Redis) LLen(key string) (int64, error) {
-	counts, err := rds.client.LLen(key).Result()
+	counts, err := rds.client.LLen(context.TODO(), key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -305,7 +421,7 @@ func (rds *Redis) LLen(key string) (int64, error) {
 }
 
 func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) ([]string, error) {
-	listLength, err := rds.client.LLen(key).Result()
+	listLength, err := rds.client.LLen(context.TODO(), key).Result()
 	if err != nil {
 		return []string{}, errors.New("is not list")
 	}
@@ -326,7 +442,7 @@ func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) (
 		return defaultValue, errors.New("illegal index")
 	}
 
-	total, err := rds.client.LRange(key, start, stop).Result()
+	total, err := rds.client.LRange(context.TODO(), key, start, stop).Result()
 	if err != nil {
 		return defaultValue, err
 	}
@@ -335,13 +451,13 @@ func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) (
 }
 
 func (rds *Redis) Expire(key string, expire time.Duration) bool {
-	result, _ := rds.client.Expire(key, expire).Result()
+	result, _ := rds.client.Expire(context.TODO(), key, expire).Result()
 
 	return result
 }
 
 func (rds *Redis) TTL(key string) (time.Duration, error) {
-	expire, err := rds.client.TTL(key).Result()
+	expire, err := rds.client.TTL(context.TODO(), key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -350,7 +466,7 @@ func (rds *Redis) TTL(key string) (time.Duration, error) {
 }
 
 func (rds *Redis) Scan(cursor uint64, match string, count int64) ([]string, uint64, error) {
-	keys, newCursor, err := rds.client.Scan(cursor, match, count).Result()
+	keys, newCursor, err := rds.client.Scan(context.TODO(), cursor, match, count).Result()
 
 	if err != nil {
 		return []string{}, 0, err
@@ -360,7 +476,7 @@ func (rds *Redis) Scan(cursor uint64, match string, count int64) ([]string, uint
 }
 
 func (rds *Redis) Delete(key ...string) (int64, error) {
-	numberOfKeyRemove, err := rds.client.Del(key...).Result()
+	numberOfKeyRemove, err := rds.client.Del(context.TODO(), key...).Result()
 
 	if err != nil {
 		return 0, err
@@ -370,7 +486,7 @@ func (rds *Redis) Delete(key ...string) (int64, error) {
 }
 
 func (rds *Redis) Publish(channel string, message interface{}) error {
-	_, err := rds.client.Publish(channel, message).Result()
+	_, err := rds.client.Publish(context.TODO(), channel, message).Result()
 
 	if err != nil {
 		return err
@@ -380,7 +496,7 @@ func (rds *Redis) Publish(channel string, message interface{}) error {
 }
 
 func (rds *Redis) SubscribeChanel(channel string) <-chan *redis.Message {
-	subscriber := rds.client.Subscribe(channel)
+	subscriber := rds.client.Subscribe(context.TODO(), channel)
 	ch := subscriber.Channel()
 
 	return ch
