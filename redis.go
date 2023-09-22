@@ -221,6 +221,41 @@ func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 	return m, nil
 }
 
+// HGETALL SCAN 不支援 redis.nil
+// 沒辦法判斷是否有資料，所以用 MustScan 來處理
+// https://github.com/redis/go-redis/issues/2138
+type ScanCommander interface {
+	Scan(dst interface{}) error
+}
+
+func MustScan(s ScanCommander, dest ...interface{}) error {
+	switch cmd := s.(type) {
+	case *redis.MapStringStringCmd:
+		if len(cmd.Val()) == 0 {
+			return redis.Nil
+		}
+	case *redis.SliceCmd:
+		keyExists := false
+		for _, v := range cmd.Val() {
+			if v != nil {
+				keyExists = true
+				break
+			}
+		}
+		if !keyExists {
+			return redis.Nil
+		}
+	}
+
+	for _, d := range dest {
+		if err := s.Scan(d); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 //直接把 redis hashes data 的資料塞到 struct，struct tags 要用 redis:"key_name"
 //
 // example:
@@ -234,7 +269,8 @@ func (rds *Redis) HMGetAll(key string) (map[string]string, error) {
 // var space Space
 // err := HGetAllScan("space:1", &space)
 func (rds *Redis) HGetAllScan(key string, destination any) error {
-	err := rds.client.HGetAll(context.TODO(), key).Scan(destination)
+	cmd := rds.client.HGetAll(context.TODO(), key)
+	err := MustScan(cmd, destination)
 	if err != nil {
 		return err
 	}
@@ -255,7 +291,8 @@ func (rds *Redis) HGetAllScan(key string, destination any) error {
 //var space Space
 // err := HMGetScan("space:1", []string{"id", "name"}, &space)
 func (rds *Redis) HMGetScan(key string, field []string, destination any) error {
-	err := rds.client.HMGet(context.TODO(), key, field...).Scan(destination)
+	cmd := rds.client.HMGet(context.TODO(), key, field...)
+	err := MustScan(cmd, destination)
 
 	if err != nil {
 		return err
