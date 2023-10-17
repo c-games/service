@@ -1605,3 +1605,124 @@ func TestRedis_GeoSearch(t *testing.T) {
 	// 	})
 	// }
 }
+
+func TestRedis_SAdd(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key     string
+		members []any
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int64
+		wantErr bool
+	}{
+		{
+			name: "success",
+			fields: fields{
+				client: client,
+			},
+			args: args{
+				key:     "test",
+				members: []any{"1", "2"},
+			},
+			want:    2,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.SAdd(tt.args.key, tt.args.members...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.SAdd() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Redis.SAdd() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRedis_SMembers(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	defer s.Close()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+
+	client.SAdd(context.Background(), "test", "1", "2")
+
+	type fields struct {
+		client *redis.Client
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "success",
+			fields: fields{
+				client: client,
+			},
+			args: args{
+				key: "test",
+			},
+			want:    []string{"1", "2"},
+			wantErr: false,
+		},
+		{
+			name: "key not exist",
+			fields: fields{
+				client: client,
+			},
+			args: args{
+				key: "test2",
+			},
+			want:    []string{},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rds := &Redis{
+				client: tt.fields.client,
+			}
+			got, err := rds.SMembers(tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Redis.SMembers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Redis.SMembers() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
