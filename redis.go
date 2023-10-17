@@ -320,6 +320,16 @@ func (rds *Redis) GeoAdd(key string, geoLocation ...*GeoLocation) (int64, error)
 	return effectedRaws, nil
 }
 
+func (rds *Redis) GeoRemove(key string, member ...interface{}) (int64, error) {
+
+	effectedRaws, err := rds.client.ZRem(context.TODO(), key, member...).Result()
+	if err != nil {
+		return effectedRaws, err
+	}
+
+	return effectedRaws, nil
+}
+
 func (rds *Redis) GeoSearch(key string, q *GeoSearchQuery) ([]string, error) {
 	result, err := rds.client.GeoSearch(context.TODO(), key, &redis.GeoSearchQuery{
 		Member:     q.Member,
