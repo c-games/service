@@ -487,6 +487,19 @@ func (rds *Redis) LRange(key string, start, stop int64, defaultValue []string) (
 	return total, nil
 }
 
+func (rds *Redis) SAdd(key string, members ...any) (int64, error){
+
+	numbers, err := rds.client.SAdd(context.TODO(), key, members...).Result()
+
+	return numbers, err
+}
+
+func (rds *Redis) SMembers(key string) ([]string, error){
+	members, err := rds.client.SMembers(context.TODO(), key).Result()
+
+	return members, err
+}
+
 func (rds *Redis) Expire(key string, expire time.Duration) bool {
 	result, _ := rds.client.Expire(context.TODO(), key, expire).Result()
 
