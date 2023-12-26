@@ -74,6 +74,11 @@ func NewRedis(param *RedisParameter) (*Redis, error) {
 
 }
 
+func NewCustomRedis(redis *redis.Client) (*Redis, error) {
+
+	return &Redis{client: redis}, nil
+}
+
 func (rds *Redis) Set(key string, value interface{}) error {
 	err := rds.client.Set(context.TODO(), key, value, 0).Err()
 
